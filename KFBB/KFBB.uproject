@@ -3,14 +3,19 @@
 	"EngineAssociation": "4.17",
 	"Category": "",
 	"Description": "",
-	"Modules": [
-		{
-			"Name": "KFBB",
-			"Type": "Runtime",
-			"LoadingPhase": "Default",
-			"AdditionalDependencies": [
-				"Engine"
-			]
-		}
-	]
+  "Modules": [
+    {
+      "Name": "KFBB",
+      "Type": "Runtime",
+      "LoadingPhase": "Default",
+      "AdditionalDependencies": [
+        "Engine"
+      ]
+    },
+    {
+      "Name": "KFBBEditor",
+      "Type": "Editor",
+      "LoadingPhase": "PostEngineInit"
+    }
+  ]
 }

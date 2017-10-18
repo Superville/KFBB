@@ -10,5 +10,14 @@ public class KFBBTarget : TargetRules
 		Type = TargetType.Game;
 
 		ExtraModuleNames.AddRange( new string[] { "KFBB" } );
-	}
+
+        if (bBuildEditor)
+        {
+            ExtraModuleNames.AddRange(
+                new string[]
+                {
+                    "KFBBEditor"
+                });
+        }
+    }
 }

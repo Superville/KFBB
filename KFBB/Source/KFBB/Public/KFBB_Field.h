@@ -6,21 +6,32 @@
 #include "GameFramework/Actor.h"
 #include "KFBB_Field.generated.h"
 
-struct FFieldTile
+USTRUCT()
+struct KFBB_API FFieldTile
 {
+	GENERATED_BODY()
+
 public:
 	FFieldTile();
 	~FFieldTile();
 
+	UPROPERTY()
 	int idx;
+	UPROPERTY()
 	int x;
+	UPROPERTY()
 	int y;
 
+	UPROPERTY()
 	bool bEndZone;
+	UPROPERTY()
 	bool bWideOut;
+	UPROPERTY()
 	bool bScrimmageLine;
 
+	UPROPERTY()
 	class AKFBB_Field* Field;
+	UPROPERTY()
 	FVector TileLocation;
 
 	void Init(AKFBB_Field* inField, int inIdx, int inX, int inY);
@@ -59,7 +70,19 @@ public:
 	UPROPERTY(EditAnywhere)
 	int WideOutSize;
 	
+	UPROPERTY()
 	FVector Origin;
+	UPROPERTY()
 	FVector TileStep;
+	UPROPERTY()
 	TArray<FFieldTile> Map;
+
+	int GetIndexByXY(int x, int y) const;
+
+	UFUNCTION(BlueprintPure)
+	int GetFieldWidth() const { return Width; }
+	UFUNCTION(BlueprintPure)
+	int GetFieldLength() const { return Length; }
+	UFUNCTION(BlueprintPure)
+	FVector GetFieldTileLocation(int x, int y) const;
 };

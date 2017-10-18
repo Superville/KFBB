@@ -32,7 +32,7 @@ void AKFBB_Field::BeginPlay()
 	{
 		for (int x = 0; x < Width; x++)
 		{
-			int idx = (y * Width) + x;
+			int idx = GetIndexByXY(x, y);
 			auto& tile = Map[idx];
 			tile.Init(this, idx, x, y);
 		}
@@ -54,6 +54,25 @@ void AKFBB_Field::Tick(float DeltaTime)
 		auto& t = Map[i];
 		t.DrawDebugTile();
 	}
+}
+
+int AKFBB_Field::GetIndexByXY(int x, int y) const
+{
+	if (x < 0 || x >= Width || y < 0 || y >= Length)
+		return -1;
+
+	return (y * Width) + x;
+}
+
+FVector AKFBB_Field::GetFieldTileLocation(int x, int y) const
+{
+	int idx = GetIndexByXY(x, y);
+	if (idx >= 0)
+	{
+		return Map[idx].TileLocation;
+	}
+
+	return FVector::ZeroVector;
 }
 
 
@@ -103,4 +122,6 @@ void FFieldTile::DrawDebugTile()
 	
 	DrawDebugBox(MyWorld, TileLocation, FVector(Field->TileSize, Field->TileSize, 0) * 0.5f, color);
 	DrawDebugLine(MyWorld, TileLocation, TileLocation + FVector(0, 0, 5), color);
+
+	
 }
