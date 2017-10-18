@@ -34,6 +34,9 @@ public:
 	UPROPERTY()
 	FVector TileLocation;
 
+	UPROPERTY()
+	UStaticMeshComponent* Comp;
+
 	void Init(AKFBB_Field* inField, int inIdx, int inX, int inY);
 
 	void DrawDebugTile();
@@ -76,6 +79,8 @@ public:
 	FVector TileStep;
 	UPROPERTY()
 	TArray<FFieldTile> Map;
+	UPROPERTY(EditAnywhere)
+	FStringAssetReference StaticMeshRef;
 
 	int GetIndexByXY(int x, int y) const;
 

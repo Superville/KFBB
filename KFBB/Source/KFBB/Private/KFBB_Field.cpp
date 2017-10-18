@@ -37,6 +37,7 @@ void AKFBB_Field::BeginPlay()
 			tile.Init(this, idx, x, y);
 		}
 	}
+
 }
 
 void AKFBB_Field::Destroyed()
@@ -105,6 +106,20 @@ void FFieldTile::Init(AKFBB_Field* inField, int inIdx, int inX, int inY)
 	if (y == HalfLength || y == (HalfLength - 1))
 	{
 		bScrimmageLine = true;
+	}
+
+	if (Field->StaticMeshRef.IsValid())
+	{
+		Comp = NewObject<UStaticMeshComponent>(Field);
+		if (Comp == nullptr)
+		{
+			Comp->AttachToComponent(Field->GetRootComponent(), FAttachmentTransformRules::KeepWorldTransform);
+			Comp->SetStaticMesh(Cast<UStaticMesh>(StaticLoadObject(UObject::StaticClass(), nullptr, *Field->StaticMeshRef.ToString())));
+			Comp->SetVisibility(true);
+			Comp->RegisterComponent();
+			Comp->SetWorldLocation(TileLocation - (Field->TileStep*0.5f));
+			Comp->SetRelativeScale3D(FVector(Field->TileSize / 400.f, Field->TileSize / 400.f, 1.f));
+		}
 	}
 }
 
