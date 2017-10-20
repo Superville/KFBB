@@ -64,12 +64,5 @@ FVector AKFBBGameModeBase::GetFieldTileLocation(int x, int y) const
 	if (Field == nullptr)
 		return FVector::ZeroVector;
 
-	int idx = Field->GetIndexByXY(x, y);
-	if (idx >= 0)
-	{
-		auto& tile = Field->Map[idx];
-		return tile.TileLocation;
-	}
-
-	return FVector::ZeroVector;
+	return Field->GetFieldTileLocation(x, y);
 }

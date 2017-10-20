@@ -4,45 +4,8 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
+#include "KFBB_FieldTile.h"
 #include "KFBB_Field.generated.h"
-
-USTRUCT()
-struct KFBB_API FFieldTile
-{
-	GENERATED_BODY()
-
-public:
-	FFieldTile();
-	~FFieldTile();
-
-	UPROPERTY()
-	int idx;
-	UPROPERTY()
-	int x;
-	UPROPERTY()
-	int y;
-
-	UPROPERTY()
-	bool bEndZone;
-	UPROPERTY()
-	bool bWideOut;
-	UPROPERTY()
-	bool bScrimmageLine;
-
-	UPROPERTY()
-	class AKFBB_Field* Field;
-	UPROPERTY()
-	FVector TileLocation;
-
-	UPROPERTY()
-	UStaticMeshComponent* Comp;
-
-	void Init(AKFBB_Field* inField, int inIdx, int inX, int inY);
-
-	void DrawDebugTile();
-};
-
-
 
 UCLASS()
 class KFBB_API AKFBB_Field : public AActor
@@ -62,27 +25,28 @@ public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	int Length;
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	int Width;
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	float TileSize;
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	int EndZoneSize;
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	int WideOutSize;
 	
-	UPROPERTY()
+	UPROPERTY(BlueprintReadOnly)
 	FVector Origin;
-	UPROPERTY()
+	UPROPERTY(BlueprintReadOnly)
 	FVector TileStep;
-	UPROPERTY()
-	TArray<FFieldTile> Map;
-	UPROPERTY(EditAnywhere)
-	FStringAssetReference StaticMeshRef;
 
+	UFUNCTION(BlueprintPure)
 	int GetIndexByXY(int x, int y) const;
+	UFUNCTION(BlueprintPure)
+	int GetXByIndex(int idx) const;
+	UFUNCTION(BlueprintPure)
+	int GetYByIndex(int idx) const;
 
 	UFUNCTION(BlueprintPure)
 	int GetFieldWidth() const { return Width; }
@@ -90,4 +54,7 @@ public:
 	int GetFieldLength() const { return Length; }
 	UFUNCTION(BlueprintPure)
 	FVector GetFieldTileLocation(int x, int y) const;
+
+	UFUNCTION(BlueprintCallable)
+	void Init();
 };

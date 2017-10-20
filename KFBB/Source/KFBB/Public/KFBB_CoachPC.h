@@ -14,7 +14,11 @@ class KFBB_API AKFBB_CoachPC : public APlayerController
 {
 	GENERATED_BODY()
 	
-	
+public:
+	virtual void BeginPlay() override;
+
+	UFUNCTION(BlueprintCallable)
+	void PlayerTouchScreen();
 	
 	
 };

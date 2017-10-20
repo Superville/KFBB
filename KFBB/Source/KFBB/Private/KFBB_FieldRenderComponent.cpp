@@ -36,14 +36,6 @@ void UKFBB_FieldRenderComponent::TickComponent(float DeltaTime, ELevelTick TickT
 
 void UKFBB_FieldRenderComponent::DrawDebugField()
 {
-	auto OwningField = Cast<AKFBB_Field>(GetOwner());
-	if (OwningField != nullptr)
-	{
-		for( int i = 0; i < OwningField->Map.Num(); i++ )
-		{
-			auto t = OwningField->Map[i];
-			t.DrawDebugTile();
-		}
-	}
+
 }
 
