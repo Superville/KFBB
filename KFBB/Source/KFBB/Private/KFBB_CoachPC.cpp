@@ -21,11 +21,11 @@ void AKFBB_CoachPC::PlayerTouchScreen()
 	{
 		auto MyWorld = GetWorld();
 		
-		FHitResult Hit;
+/*		FHitResult Hit;
 		if (MyWorld->LineTraceSingleByChannel(Hit, WorldLoc, WorldLoc + (WorldDir * 10000.f), ECollisionChannel::ECC_Visibility))
 		{
 			
-		}
+		}*/
 	}
 }
 
