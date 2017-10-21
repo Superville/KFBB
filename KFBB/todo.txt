@@ -1,0 +1,110 @@
+Pitch
+	Fantasy Football with persistent teams and fantastical characters.  
+	1v1 duels (or 2v2) simultaneous play w/ cooldowns after character movement
+Short session, mobile app
+
+Todo:
+	Be able to spawn a player on a tile
+
+	Coach PC - implement concept of active tile, while there is an active tile mouse move causes others to update?
+	Coach PC - implement concept of click and release, and click and drag?
+
+	Display match over when time runs out
+	Occupying Actor (Player/Ball)
+	
+	Create Team Class
+	Create Player Class
+	Create Ball Class
+
+
+
+
+
+Field
+	Squares
+		Size 64
+	Field Width/Height Params
+		11 x 14(+2 End Zones) = 11 x 16
+	TD Zone
+		Size: 1
+	Wide Zone
+		Size: 3
+	Line of Scrimmage
+
+Players
+	Primary Stats (*If a stat ever reaches 0, player is dead)
+		Movement Distance    (1-5 / Def 3)
+		Movement Cooldown (0.25 – 4/ Def 2)
+		Translation Speed (1 square/sec)
+		Strength
+		Agility
+		Armor Value
+	Secondary Stats
+		Exhaustion (too many games played in a row)
+		Size (1 = 1x1, 2 = 2x2)
+	Tertiary Stats
+		Number of Recovery Games	
+	Attributes
+		Value
+		Skills
+		Injuries
+	Mesh
+	Animations
+	
+	
+
+Movement
+	Translation
+	Cooldown
+	Preview of distances
+
+Combat/Collisions
+	Results	
+		(6) Pow/Knockdown
+		(5) Defender Stumble
+		(4/3) Push
+			Direction (random?)
+		(2) Both Down
+		(1) Attacker Down
+	Armor Roll 2D6 >Armor Value
+	Injury Result 2D6
+		(2-7) Stun
+		(8-9) KO
+		(10+) Injury
+	Casualty Rolls
+		After game?
+		
+Controls	
+Camera
+		Translation			
+	Player Selection
+	Player Action
+		Move
+		Attack
+		
+
+
+Team
+	Roster
+		Number of players
+		Max players
+	Value
+	Persistence
+	Mangement
+		Buying
+		Firing
+	Preset Layouts
+
+	
+
+MTX
+
+
+
+
+Star Player Market
+Scrubs fill in
+	Scrubs can grow to become star players
+Race & Position relationships + Performance Impact
+
+

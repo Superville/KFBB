@@ -4,7 +4,6 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
-#include "KFBB_FieldTile.h"
 #include "KFBB_Field.generated.h"
 
 UCLASS()
@@ -25,6 +24,9 @@ public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
+	// Searches the map for a KFBB_Field actor and assigns it to the pointer ref
+	static bool AssignFieldActor(AActor* src, AKFBB_Field*& ptrField);
+
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	int Length;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
@@ -35,6 +37,15 @@ public:
 	int EndZoneSize;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	int WideOutSize;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	UMaterial* Mat_Field;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	UMaterial* Mat_EndZone;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	UMaterial* Mat_WideOut;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	UMaterial* Mat_Scrimmage;
 	
 	UPROPERTY(BlueprintReadOnly)
 	FVector Origin;

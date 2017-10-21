@@ -3,7 +3,6 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "KFBB_Field.h"
 #include "GameFramework/GameModeBase.h"
 #include "KFBBGameModeBase.generated.h"
 

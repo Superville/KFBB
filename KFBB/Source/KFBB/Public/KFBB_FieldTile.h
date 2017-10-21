@@ -4,7 +4,6 @@
 
 #include "CoreMinimal.h"
 #include "Components/StaticMeshComponent.h"
-#include "KFBB_Field.h"
 #include "KFBB_FieldTile.generated.h"
 
 /**
@@ -30,13 +29,28 @@ public:
 	UPROPERTY(BlueprintReadOnly)
 	bool bScrimmageLine;
 
-	UPROPERTY()
+	UPROPERTY(BlueprintReadOnly)
 	class AKFBB_Field* Field;
 	UPROPERTY(BlueprintReadOnly)
 	FVector TileLocation;
+	UPROPERTY(BlueprintReadOnly)
+	TArray<AActor*> RegisteredActors;
 
 	UFUNCTION(BlueprintCallable)
 	void Init(AKFBB_Field* inField, int inIdx);
+
+	UFUNCTION(BlueprintCallable)
+	bool RegisterActor(AActor* a);
+
+	UFUNCTION(BlueprintCallable)
+	bool UnRegisterActor(AActor* a);
+
+	UFUNCTION(BlueprintCallable)
+	bool HasPlayer();
+	UFUNCTION(BlueprintCallable)
+	bool HasBall();
+
+
 
 	UFUNCTION(BlueprintCallable)
 	void DrawDebugTile() const;

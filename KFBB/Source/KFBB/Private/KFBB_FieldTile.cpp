@@ -1,6 +1,8 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 #include "KFBB_FieldTile.h"
+#include "KFBB_Field.h"
+#include "KFBB_PlayerPawn.h"
 #include "DrawDebugHelpers.h"
 
 void UKFBB_FieldTile::Init(AKFBB_Field* inField, int inIdx)
@@ -28,6 +30,41 @@ void UKFBB_FieldTile::Init(AKFBB_Field* inField, int inIdx)
 
 	SetWorldLocation(TileLocation - (Field->TileStep*0.5f));
 	SetRelativeScale3D(FVector(Field->TileSize / 400.f, Field->TileSize / 400.f, 1.f));
+
+	// Set visual appearance of the tile
+	if (bEndZone) SetMaterial(0, Field->Mat_EndZone);
+	else if (bWideOut) SetMaterial(0, Field->Mat_WideOut);
+	else if (bScrimmageLine) SetMaterial(0, Field->Mat_Scrimmage);
+	else SetMaterial(0, Field->Mat_Field);
+}
+
+bool UKFBB_FieldTile::RegisterActor(AActor* a)
+{
+	RegisteredActors.Add(a);
+	return true;
+}
+
+bool UKFBB_FieldTile::UnRegisterActor(AActor* a)
+{
+	int idx = RegisteredActors.Remove(a);
+	return (idx > 0);
+}
+
+bool UKFBB_FieldTile::HasPlayer()
+{
+	for (int i = 0; i < RegisteredActors.Num(); ++i)
+	{
+		if (RegisteredActors[i]->IsA(AKFBB_PlayerPawn::StaticClass()))
+		{
+			return true;
+		}
+	}
+	return false;
+}
+
+bool UKFBB_FieldTile::HasBall()
+{
+	return false;
 }
 
 void UKFBB_FieldTile::DrawDebugTile() const

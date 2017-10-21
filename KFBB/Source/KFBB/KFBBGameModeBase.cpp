@@ -1,6 +1,7 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 #include "KFBBGameModeBase.h"
+#include "KFBB_Field.h"
 #include "EngineUtils.h"
 #include "Blueprint/UserWidget.h"
 
@@ -20,17 +21,7 @@ void AKFBBGameModeBase::BeginPlay()
 		}
 	}
 
-	Field = nullptr;
-	for (TActorIterator<AKFBB_Field> ActorItr(GetWorld()); ActorItr; ++ActorItr)
-	{
-		if (Field != nullptr)
-		{
-			UE_LOG(LogTemp, Warning, TEXT("AKFBBGameModeBase::BeginPlay - Found duplicate AKFBB_Field Actor - %s"), *((*ActorItr)->GetName()));
-			continue;
-		}
-		
-		Field = *ActorItr;
-	}
+	AKFBB_Field::AssignFieldActor(this, Field);
 }
 
 void AKFBBGameModeBase::Tick(float DeltaTime)

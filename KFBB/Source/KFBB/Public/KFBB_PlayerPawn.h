@@ -11,6 +11,11 @@ class KFBB_API AKFBB_PlayerPawn : public APawn
 {
 	GENERATED_BODY()
 
+	void RegisterWithField();
+	void RegisterWithTile(class UKFBB_FieldTile* Tile);
+
+	void DrawDebugCurrentTile();
+
 public:
 	// Sets default values for this pawn's properties
 	AKFBB_PlayerPawn();
@@ -26,6 +31,12 @@ public:
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
+	UPROPERTY(BlueprintReadOnly)
+	class AKFBB_CoachPC* Coach;
+	UPROPERTY(BlueprintReadOnly)
+	class AKFBB_Field *Field;
+	UPROPERTY(BlueprintReadOnly)
+	class UKFBB_FieldTile* CurrentTile;
 	
 	
 };

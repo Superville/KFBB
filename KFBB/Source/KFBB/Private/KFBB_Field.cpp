@@ -1,7 +1,9 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 #include "KFBB_Field.h"
+#include "KFBB_FieldTile.h"
 #include "DrawDebugHelpers.h"
+#include "EngineUtils.h"
 
 // Sets default values
 AKFBB_Field::AKFBB_Field()
@@ -9,6 +11,33 @@ AKFBB_Field::AKFBB_Field()
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 
+}
+
+bool AKFBB_Field::AssignFieldActor(AActor* src, AKFBB_Field*& ptrField)
+{
+	if (src == nullptr)
+	{
+		UE_LOG(LogTemp, Error, TEXT("AKFBB_Field::AssignFieldActor - NULL Src Actor"));
+	}
+
+	ptrField = nullptr;
+	for (TActorIterator<AKFBB_Field> ActorItr(src->GetWorld()); ActorItr; ++ActorItr)
+	{
+		if (ptrField != nullptr)
+		{
+			UE_LOG(LogTemp, Warning, TEXT("AKFBB_Field::AssignFieldActor - Found duplicate AKFBB_Field Actor - %s (Called by %s)"), *((*ActorItr)->GetName()), *src->GetName());
+			continue;
+		}
+
+		ptrField = *ActorItr;
+	}
+
+	if (ptrField == nullptr)
+	{
+		UE_LOG(LogTemp, Error, TEXT("AKFBB_Field::AssignFieldActor - Failed to find AKFBB_Field Actor (Called by %s)"), *src->GetName());
+	}
+	
+	return (ptrField != nullptr);
 }
 
 // Called when the game starts or when spawned
