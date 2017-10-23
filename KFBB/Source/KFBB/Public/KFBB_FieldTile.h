@@ -50,6 +50,11 @@ public:
 	UFUNCTION(BlueprintCallable)
 	bool HasBall();
 
+	UFUNCTION(BlueprintCallable)
+	AKFBB_PlayerPawn* GetPlayer();
+	UFUNCTION(BlueprintCallable)
+	AActor* GetBall();
+
 
 
 	UFUNCTION(BlueprintCallable)

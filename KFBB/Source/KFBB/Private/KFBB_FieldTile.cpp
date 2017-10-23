@@ -36,6 +36,8 @@ void UKFBB_FieldTile::Init(AKFBB_Field* inField, int inIdx)
 	else if (bWideOut) SetMaterial(0, Field->Mat_WideOut);
 	else if (bScrimmageLine) SetMaterial(0, Field->Mat_Scrimmage);
 	else SetMaterial(0, Field->Mat_Field);
+
+//	SetCanEverAffectNavigation(false);
 }
 
 bool UKFBB_FieldTile::RegisterActor(AActor* a)
@@ -65,6 +67,24 @@ bool UKFBB_FieldTile::HasPlayer()
 bool UKFBB_FieldTile::HasBall()
 {
 	return false;
+}
+
+AKFBB_PlayerPawn* UKFBB_FieldTile::GetPlayer()
+{
+	for (int i = 0; i < RegisteredActors.Num(); ++i)
+	{
+		AKFBB_PlayerPawn* p = Cast<AKFBB_PlayerPawn>(RegisteredActors[i]);
+		if (p != nullptr)
+		{
+			return p;
+		}
+	}
+	return nullptr;
+}
+
+AActor* UKFBB_FieldTile::GetBall()
+{
+	return nullptr;
 }
 
 void UKFBB_FieldTile::DrawDebugTile() const

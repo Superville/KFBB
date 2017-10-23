@@ -3,6 +3,7 @@
 #include "KFBB_CoachPC.h"
 #include "KFBB_Field.h"
 #include "KFBB_FieldTile.h"
+#include "AIController.h"
 #include "EngineUtils.h"
 #include "DrawDebugHelpers.h"
 
@@ -17,6 +18,8 @@ void AKFBB_CoachPC::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
+	auto MouseTile = GetTileUnderMouse();
+
 	if (SelectedTile != nullptr)
 	{
 		FColor c = FColor::White;
@@ -26,48 +29,94 @@ void AKFBB_CoachPC::Tick(float DeltaTime)
 	{
 		FColor c = FColor::Purple;
 		DrawDebugBox(GetWorld(), DestinationTile->TileLocation + FVector(0, 0, 2), FVector(Field->TileSize, Field->TileSize, 0) * 0.45f, c, false);
-	}	
+	}
+
+	if (SelectedTile != nullptr && 
+		DestinationTile == nullptr && 
+		MouseTile != nullptr && 
+		MouseTile != SelectedTile)
+	{
+		FColor c = FColor::Yellow;
+		DrawDebugBox(GetWorld(), MouseTile->TileLocation + FVector(0, 0, 2), FVector(Field->TileSize, Field->TileSize, 0) * 0.45f, c, false);
+	}
+}
+
+UKFBB_FieldTile* AKFBB_CoachPC::GetTileUnderMouse()
+{
+	FVector WorldLoc, WorldDir;
+	if (DeprojectMousePositionToWorld(WorldLoc, WorldDir))
+	{
+		auto MyWorld = GetWorld();
+
+		FHitResult Hit;
+		if (MyWorld->LineTraceSingleByChannel(Hit, WorldLoc, WorldLoc + (WorldDir * 10000.f), ECollisionChannel::ECC_Visibility))
+		{
+			return Cast<UKFBB_FieldTile>(Hit.GetComponent());
+		}
+	}
+	return nullptr;
 }
 
 void AKFBB_CoachPC::PlayerTouchScreen()
 {
-	FVector WorldLoc, WorldDir;
-	if(DeprojectMousePositionToWorld(WorldLoc, WorldDir))
+	UKFBB_FieldTile* Tile = GetTileUnderMouse();
+
+	if (DestinationTile != nullptr || Tile == nullptr)
 	{
-		auto MyWorld = GetWorld();
-		
-		FHitResult Hit;
-		if (MyWorld->LineTraceSingleByChannel(Hit, WorldLoc, WorldLoc + (WorldDir * 10000.f), ECollisionChannel::ECC_Visibility))
+		ClearTileSelection();
+	}
+
+	if (Tile != nullptr)
+	{
+		//DrawDebugTouchedTile(Tile);
+
+		if (SelectedTile == nullptr)
 		{
-			if (DestinationTile != nullptr)
-			{
-				ClearTileSelection();
-			}
-
-			UKFBB_FieldTile* Tile = Cast<UKFBB_FieldTile>(Hit.GetComponent());
-			if (Tile != nullptr)
-			{
-				//DrawDebugTouchedTile(Tile);
-
-				if (SelectedTile == nullptr)
-				{
-					SelectedTile = Tile;
-				}
-				else if (SelectedTile == Tile)
-				{
-					ClearTileSelection();
-				}
-				else
-				{
-					DestinationTile = Tile;
-				}
-			}
+			SelectedTile = Tile;
 		}
-		else
+		else if (SelectedTile == Tile)
 		{
 			ClearTileSelection();
 		}
+		else
+		{
+			SetDestinationTile(Tile);
+		}
 	}
+}
+
+void AKFBB_CoachPC::SetDestinationTile(UKFBB_FieldTile* t)
+{
+	DestinationTile = t;
+	if (DestinationTile != nullptr && SelectedTile != nullptr && SelectedTile->HasPlayer())
+	{
+		TryMovePawnToDestination();
+	}
+}
+
+bool AKFBB_CoachPC::TryMovePawnToDestination()
+{
+	AKFBB_PlayerPawn* p = SelectedTile->GetPlayer();
+	if (p != nullptr)
+	{
+		if (p->Controller != nullptr)
+		{
+			AAIController* ai = Cast<AAIController>(p->Controller);
+			if (ai != nullptr)
+			{
+				FVector Dest = DestinationTile->TileLocation;
+				Dest.Z += PlayerSpawnOffsetZ;
+				auto result = ai->MoveToLocation(Dest, 0.f, false, false, false, false);
+				
+				if (result == EPathFollowingRequestResult::RequestSuccessful)
+				{
+					return true;
+				}
+			}
+		}
+	}
+
+	return false;
 }
 
 void AKFBB_CoachPC::SpawnPlayerOnTile()

@@ -4,7 +4,8 @@ Pitch
 Short session, mobile app
 
 Todo:
-	Be able to spawn a player on a tile
+	Download UE4 git code
+	Pawn won't move with MoveToLocation, use code to debug why by going into the function
 
 	Coach PC - implement concept of active tile, while there is an active tile mouse move causes others to update?
 	Coach PC - implement concept of click and release, and click and drag?

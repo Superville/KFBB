@@ -3,11 +3,11 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "GameFramework/Pawn.h"
+#include "GameFramework/Character.h"
 #include "KFBB_PlayerPawn.generated.h"
 
 UCLASS()
-class KFBB_API AKFBB_PlayerPawn : public APawn
+class KFBB_API AKFBB_PlayerPawn : public ACharacter
 {
 	GENERATED_BODY()
 
