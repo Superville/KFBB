@@ -70,7 +70,7 @@ void AKFBB_CoachPC::PlayerTouchScreen()
 	{
 		//DrawDebugTouchedTile(Tile);
 
-		if (SelectedTile == nullptr)
+		if (SelectedTile == nullptr || SelectedTile->HasPlayer() == false)
 		{
 			SelectedTile = Tile;
 		}
@@ -99,23 +99,7 @@ bool AKFBB_CoachPC::TryMovePawnToDestination()
 	AKFBB_PlayerPawn* p = SelectedTile->GetPlayer();
 	if (p != nullptr )
 	{
-		if (p->CanAcceptCommand() && p->Controller != nullptr)
-		{
-			AAIController* ai = Cast<AAIController>(p->Controller);
-			if (ai != nullptr)
-			{
-				FVector Dest = DestinationTile->TileLocation;
-				Dest.Z += PlayerSpawnOffsetZ;
-				auto result = ai->MoveToLocation(Dest, 0.f, false, false, false, false);
-				
-				if (result == EPathFollowingRequestResult::RequestSuccessful)
-				{
-					return true;
-				}
-			}
-		}
-
-		p->NotifyCommandFailed();
+		return p->NotifyCommandGiven(DestinationTile);
 	}
 
 	return false;

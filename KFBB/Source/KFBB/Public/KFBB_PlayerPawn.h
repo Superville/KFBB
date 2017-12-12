@@ -6,6 +6,22 @@
 #include "GameFramework/Character.h"
 #include "KFBB_PlayerPawn.generated.h"
 
+
+UENUM(BlueprintType)
+namespace EKFBB_PlayerState
+{
+	enum Type
+	{
+		Normal,
+		Down,
+		Stunned,
+		Standing,
+		Moving,
+		Exhausted,
+	};
+}
+
+
 UCLASS()
 class KFBB_API AKFBB_PlayerPawn : public ACharacter
 {
@@ -14,11 +30,15 @@ class KFBB_API AKFBB_PlayerPawn : public ACharacter
 	void RegisterWithField();
 	void RegisterWithTile(class UKFBB_FieldTile* Tile);
 
-	void DrawDebugCurrentTile();
 
+	void SetCooldownTimer(float t) { CooldownTimer = t; }
 	void ClearCooldownTimer();
-	void ResetCooldownTimer();
+	void OnCooldownTimerExpired();
 
+	void DrawDebugCurrentTile() const;
+	void DrawDebugStatus() const;
+	FColor GetDebugColor() const;
+	
 public:
 	// Sets default values for this pawn's properties
 	AKFBB_PlayerPawn();
@@ -51,7 +71,27 @@ public:
 	UFUNCTION(BlueprintCallable)
 	bool CanAcceptCommand();
 
-
+	bool MoveToTileLocation(UKFBB_FieldTile* Tile);
+	bool NotifyCommandGiven(UKFBB_FieldTile* DestinationTile);
 	void NotifyCommandFailed();
 	void NotifyReachedDestination();	
+
+	virtual void NotifyHit(class UPrimitiveComponent* MyComp, AActor* Other, class UPrimitiveComponent* OtherComp, bool bSelfMoved, FVector HitLocation, FVector HitNormal, FVector NormalImpulse, const FHitResult& Hit) override;
+	void SetStatus_Moving();
+	void SetStatus_Exhausted();
+	void SetStatus_KnockedDown();
+	void SetStatus_Stunned();
+	void SetStatus_StandUp();
+	void SetStatus_Ready();
+
+	UPROPERTY(EditDefaultsOnly)
+	float ExhaustedCooldownTime;
+	UPROPERTY(EditDefaultsOnly)
+	float KnockedDownTime;
+	UPROPERTY(EditDefaultsOnly)
+	float StunnedTime;
+	UPROPERTY(EditDefaultsOnly)
+	float StandUpTime;
+
+	EKFBB_PlayerState::Type Status;
 };

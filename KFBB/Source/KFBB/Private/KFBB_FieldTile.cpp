@@ -93,12 +93,28 @@ void UKFBB_FieldTile::DrawDebugTile() const
 		return;
 
 	auto MyWorld = Field->GetWorld();
+	FColor color = GetDebugColor();
 
+	DrawDebugBox(MyWorld, TileLocation, FVector(Field->TileSize, Field->TileSize, 0) * 0.5f, color);
+	DrawDebugLine(MyWorld, TileLocation, TileLocation + FVector(0, 0, 5), color);
+}
+
+void UKFBB_FieldTile::DrawDebugTile(FVector offset) const
+{
+	if (Field == nullptr)
+		return;
+
+	auto MyWorld = Field->GetWorld();
+	FColor color = GetDebugColor();
+
+	DrawDebugBox(MyWorld, TileLocation + offset, FVector(Field->TileSize, Field->TileSize, 0) * 0.5f, color);
+}
+
+FColor UKFBB_FieldTile::GetDebugColor() const
+{
 	FColor color = FColor::Green;
 	if (bEndZone) color = FColor::Red;
 	else if (bWideOut) color = FColor::Orange;
 	else if (bScrimmageLine) color = FColor::Cyan;
-
-	DrawDebugBox(MyWorld, TileLocation, FVector(Field->TileSize, Field->TileSize, 0) * 0.5f, color);
-	DrawDebugLine(MyWorld, TileLocation, TileLocation + FVector(0, 0, 5), color);
+	return color;
 }

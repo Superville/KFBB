@@ -59,4 +59,6 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 	void DrawDebugTile() const;
+	void DrawDebugTile(FVector offset) const;
+	FColor GetDebugColor() const;
 };
