@@ -97,9 +97,9 @@ void AKFBB_CoachPC::SetDestinationTile(UKFBB_FieldTile* t)
 bool AKFBB_CoachPC::TryMovePawnToDestination()
 {
 	AKFBB_PlayerPawn* p = SelectedTile->GetPlayer();
-	if (p != nullptr)
+	if (p != nullptr )
 	{
-		if (p->Controller != nullptr)
+		if (p->CanAcceptCommand() && p->Controller != nullptr)
 		{
 			AAIController* ai = Cast<AAIController>(p->Controller);
 			if (ai != nullptr)
@@ -114,6 +114,8 @@ bool AKFBB_CoachPC::TryMovePawnToDestination()
 				}
 			}
 		}
+
+		p->NotifyCommandFailed();
 	}
 
 	return false;

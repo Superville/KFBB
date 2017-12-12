@@ -4,8 +4,17 @@ Pitch
 Short session, mobile app
 
 Todo:
-	Download UE4 git code
-	Pawn won't move with MoveToLocation, use code to debug why by going into the function
+	Handle player collisions
+		Detect collision
+		Knock down a random player
+			Push to a random unoccupied tile away from attacker
+			If pushed out of bounds, destroy for now
+			Later: Stationary player = more chance to stay standing
+
+	Create BALL class
+		Allow player (CHANCE) to pick it up when moving onto occupying tile
+		Scatter ball when not picked up
+
 
 	Coach PC - implement concept of active tile, while there is an active tile mouse move causes others to update?
 	Coach PC - implement concept of click and release, and click and drag?
@@ -14,10 +23,6 @@ Todo:
 	Occupying Actor (Player/Ball)
 	
 	Create Team Class
-	Create Player Class
-	Create Ball Class
-
-
 
 
 

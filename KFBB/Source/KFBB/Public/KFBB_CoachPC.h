@@ -37,7 +37,7 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 	void ClearTileSelection();
-		
+
 	UPROPERTY(BlueprintReadonly)
 	class AKFBB_Field* Field;
 

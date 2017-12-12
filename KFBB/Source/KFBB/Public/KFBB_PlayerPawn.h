@@ -16,6 +16,9 @@ class KFBB_API AKFBB_PlayerPawn : public ACharacter
 
 	void DrawDebugCurrentTile();
 
+	void ClearCooldownTimer();
+	void ResetCooldownTimer();
+
 public:
 	// Sets default values for this pawn's properties
 	AKFBB_PlayerPawn();
@@ -37,6 +40,18 @@ public:
 	class AKFBB_Field *Field;
 	UPROPERTY(BlueprintReadOnly)
 	class UKFBB_FieldTile* CurrentTile;
-	
-	
+
+
+	UPROPERTY(BlueprintReadOnly)
+	float CooldownTimer;
+
+	UFUNCTION(BlueprintCallable)
+	bool IsPlayerOnCooldown();
+
+	UFUNCTION(BlueprintCallable)
+	bool CanAcceptCommand();
+
+
+	void NotifyCommandFailed();
+	void NotifyReachedDestination();	
 };

@@ -7,8 +7,8 @@
 #include "KFBBGameModeBase.generated.h"
 
 /**
- * 
- */
+*
+*/
 UCLASS()
 class KFBB_API AKFBBGameModeBase : public AGameModeBase
 {
@@ -17,30 +17,30 @@ class KFBB_API AKFBBGameModeBase : public AGameModeBase
 
 protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Meta = (BlueprintProtected = "true"))
-	float GameDurationInSeconds;
+		float GameDurationInSeconds;
 	UPROPERTY()
-	float CurrentGameTimer;
+		float CurrentGameTimer;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "HUD", Meta = (BlueprintProtected = "true"))
-	TSubclassOf<class UUserWidget> HUDWidgetClass;
+		TSubclassOf<class UUserWidget> HUDWidgetClass;
 	UPROPERTY()
-	class UUserWidget* CurrentWidget;
+		class UUserWidget* CurrentWidget;
 
 	UPROPERTY()
-	class AKFBB_Field* Field;
+		class AKFBB_Field* Field;
 
 public:
 	UFUNCTION(BlueprintPure)
-	float GetRemainingGameTime() const;
+		float GetRemainingGameTime() const;
 
 	UFUNCTION(BlueprintPure)
-	int GetFieldWidth() const;
+		int GetFieldWidth() const;
 
 	UFUNCTION(BlueprintPure)
-	int GetFieldLength() const;
+		int GetFieldLength() const;
 
 	UFUNCTION(BlueprintPure)
-	FVector GetFieldTileLocation(int x, int y) const;
+		FVector GetFieldTileLocation(int x, int y) const;
 
 	virtual void BeginPlay() override;
 	virtual void Tick(float DeltaTime) override;

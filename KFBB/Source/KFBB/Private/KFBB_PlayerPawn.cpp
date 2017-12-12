@@ -1,6 +1,7 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 #include "KFBB_PlayerPawn.h"
+#include "KFBB_PlayerController.h"
 #include "KFBB_CoachPC.h"
 #include "KFBB_Field.h"
 #include "DrawDebugHelpers.h"
@@ -20,12 +21,19 @@ void AKFBB_PlayerPawn::BeginPlay()
 	
 	AKFBB_Field::AssignFieldActor(this, Field);
 	RegisterWithField();
+	ClearCooldownTimer();
 }
 
 // Called every frame
 void AKFBB_PlayerPawn::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+
+	RegisterWithField();
+	if(IsPlayerOnCooldown())
+	{
+		CooldownTimer -= DeltaTime;
+	}
 
 	//debug
 	DrawDebugCurrentTile();
@@ -59,6 +67,49 @@ void AKFBB_PlayerPawn::RegisterWithTile(class UKFBB_FieldTile* Tile)
 		CurrentTile = Tile;
 		if (CurrentTile != nullptr) { CurrentTile->RegisterActor(this); }
 	}
+}
+
+void AKFBB_PlayerPawn::ClearCooldownTimer() { CooldownTimer = 0.f; }
+void AKFBB_PlayerPawn::ResetCooldownTimer() { CooldownTimer = 3.f; }
+bool AKFBB_PlayerPawn::IsPlayerOnCooldown() { return (CooldownTimer > 0.f); }
+
+bool AKFBB_PlayerPawn::CanAcceptCommand()
+{
+	AAIController* ai = Cast<AAIController>(Controller);
+	if(ai != nullptr && ai->GetMoveStatus() != EPathFollowingStatus::Idle)
+	{
+		return false;
+	}
+	
+	if( IsPlayerOnCooldown())
+	{
+		return false;
+	}
+
+	return true;
+}
+
+void AKFBB_PlayerPawn::NotifyCommandFailed()
+{
+	auto MyWorld = GetWorld();
+	FColor color = FColor::Red;
+
+	AAIController* ai = Cast<AAIController>(Controller);
+	if (ai != nullptr && ai->GetMoveStatus() != EPathFollowingStatus::Idle)
+	{
+		color = FColor::Yellow;
+	}
+		
+	DrawDebugBox(MyWorld, GetActorLocation(), FVector(20, 20, 20), color, false, 1.f);
+}
+
+void AKFBB_PlayerPawn::NotifyReachedDestination()
+{
+	ResetCooldownTimer();
+
+	auto MyWorld = GetWorld();
+	FColor color = FColor::Green;
+	DrawDebugBox(MyWorld, GetActorLocation(), FVector(20, 20, 20), color, false, 1.f);
 }
 
 void AKFBB_PlayerPawn::DrawDebugCurrentTile()
