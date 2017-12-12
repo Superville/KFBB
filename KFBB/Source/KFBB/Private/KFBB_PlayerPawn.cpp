@@ -251,7 +251,7 @@ void AKFBB_PlayerPawn::DrawDebugStatus() const
 	{
 		auto MyWorld = GetWorld();
 		FColor color = GetDebugColor();
-		DrawDebugBox(MyWorld, GetActorLocation(), FVector(20, 20, 20), color, false, 1.f);
+		DrawDebugBox(MyWorld, GetActorLocation(), FVector(20, 20, 20), color, false);
 	}
 }
 FColor AKFBB_PlayerPawn::GetDebugColor() const

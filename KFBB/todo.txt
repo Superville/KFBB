@@ -5,7 +5,7 @@ Short session, mobile app
 
 Todo:
 	Handle player collisions
-		Detect collision
+		Show player crouching when knocked down
 		Knock down a random player
 			Push to a random unoccupied tile away from attacker
 			If pushed out of bounds, destroy for now
