@@ -1,7 +1,7 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 #include "KFBB_PlayerPawn.h"
-#include "KFBB_PlayerController.h"
+#include "KFBB_AIController.h"
 #include "KFBB_CoachPC.h"
 #include "KFBB_Field.h"
 #include "DrawDebugHelpers.h"
@@ -83,7 +83,7 @@ void AKFBB_PlayerPawn::OnCooldownTimerExpired()
 {
 	ClearCooldownTimer();
 
-	if (Status == EKFBB_PlayerState::Down)
+	if (Status == EKFBB_PlayerState::KnockedDown)
 	{
 		SetStatus_StandUp();
 	}
@@ -91,7 +91,7 @@ void AKFBB_PlayerPawn::OnCooldownTimerExpired()
 	{
 		SetStatus_KnockedDown();
 	}
-	else if (Status == EKFBB_PlayerState::Standing || 
+	else if (Status == EKFBB_PlayerState::StandingUp || 
 			 Status == EKFBB_PlayerState::Exhausted)
 	{
 		SetStatus_Ready();
@@ -183,6 +183,8 @@ void AKFBB_PlayerPawn::SetStatus_Moving()
 {
 	Status = EKFBB_PlayerState::Moving;
 
+	TestStatus = Status;
+
 	//test
 	UE_LOG(LogTemp, Warning, TEXT("%s Moving"), *GetName());
 }
@@ -191,6 +193,8 @@ void AKFBB_PlayerPawn::SetStatus_Exhausted()
 {
 	Status = EKFBB_PlayerState::Exhausted;
 	SetCooldownTimer(ExhaustedCooldownTime);
+
+	TestStatus = Status;
 
 	//test
 	UE_LOG(LogTemp, Warning, TEXT("%s Exhausted"), *GetName());
@@ -202,8 +206,10 @@ void AKFBB_PlayerPawn::SetStatus_KnockedDown()
 	ai->StopMovement();
 	MoveToTileLocation(CurrentTile);
 
-	Status = EKFBB_PlayerState::Down;
+	Status = EKFBB_PlayerState::KnockedDown;
 	SetCooldownTimer(KnockedDownTime);
+
+	TestStatus = Status;
 
 	//test
 	UE_LOG(LogTemp, Warning, TEXT("%s Knocked Down"), *GetName());
@@ -214,14 +220,18 @@ void AKFBB_PlayerPawn::SetStatus_Stunned()
 	Status = EKFBB_PlayerState::Stunned;
 	SetCooldownTimer(StunnedTime);
 
+	TestStatus = Status;
+
 	//test
 	UE_LOG(LogTemp, Warning, TEXT("%s Stunned!"), *GetName());
 }
 
 void AKFBB_PlayerPawn::SetStatus_StandUp()
 {
-	Status = EKFBB_PlayerState::Standing;
+	Status = EKFBB_PlayerState::StandingUp;
 	SetCooldownTimer(StandUpTime);
+
+	TestStatus = Status;
 
 	//test
 	UE_LOG(LogTemp, Warning, TEXT("%s Standup!"), *GetName());
@@ -229,8 +239,10 @@ void AKFBB_PlayerPawn::SetStatus_StandUp()
 
 void AKFBB_PlayerPawn::SetStatus_Ready()
 {
-	Status = EKFBB_PlayerState::Normal;
+	Status = EKFBB_PlayerState::Ready;
 	
+	TestStatus = Status;
+
 	//test
 	UE_LOG(LogTemp, Warning, TEXT("%s Ready!"), *GetName());
 }
@@ -245,7 +257,7 @@ void AKFBB_PlayerPawn::DrawDebugCurrentTile() const
 
 void AKFBB_PlayerPawn::DrawDebugStatus() const
 {
-	bool bDraw = (Status != EKFBB_PlayerState::Normal);
+	bool bDraw = (Status != EKFBB_PlayerState::Ready);
 
 	if (bDraw)
 	{
@@ -257,9 +269,9 @@ void AKFBB_PlayerPawn::DrawDebugStatus() const
 FColor AKFBB_PlayerPawn::GetDebugColor() const
 {
 	AAIController* ai = Cast<AAIController>(Controller);
-	if (Status == EKFBB_PlayerState::Down) { return FColor::Black; }
+	if (Status == EKFBB_PlayerState::KnockedDown) { return FColor::Black; }
 	else if (Status == EKFBB_PlayerState::Stunned) { return FColor::Blue;	}
-	else if (Status == EKFBB_PlayerState::Standing) { return FColor::Yellow; }
+	else if (Status == EKFBB_PlayerState::StandingUp) { return FColor::Yellow; }
 	else if (Status == EKFBB_PlayerState::Moving) { return FColor::Green; }
 	else if (Status == EKFBB_PlayerState::Exhausted) { return FColor::Orange; }
 	return FColor::Red;

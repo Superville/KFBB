@@ -12,10 +12,10 @@ namespace EKFBB_PlayerState
 {
 	enum Type
 	{
-		Normal,
-		Down,
+		Ready,
+		KnockedDown,
 		Stunned,
-		Standing,
+		StandingUp,
 		Moving,
 		Exhausted,
 	};
@@ -78,11 +78,23 @@ public:
 
 	virtual void NotifyHit(class UPrimitiveComponent* MyComp, AActor* Other, class UPrimitiveComponent* OtherComp, bool bSelfMoved, FVector HitLocation, FVector HitNormal, FVector NormalImpulse, const FHitResult& Hit) override;
 	void SetStatus_Moving();
+	UFUNCTION(BlueprintCallable)
+	bool IsStatusMoving() { return Status == EKFBB_PlayerState::Moving; }
 	void SetStatus_Exhausted();
+	UFUNCTION(BlueprintCallable)
+	bool IsStatusExhausted() { return Status == EKFBB_PlayerState::Exhausted; }
 	void SetStatus_KnockedDown();
+	UFUNCTION(BlueprintCallable)
+	bool IsStatusKnockedDown() { return Status == EKFBB_PlayerState::KnockedDown; }
 	void SetStatus_Stunned();
+	UFUNCTION(BlueprintCallable)
+	bool IsStatusStunned() { return Status == EKFBB_PlayerState::Stunned; }
 	void SetStatus_StandUp();
+	UFUNCTION(BlueprintCallable)
+	bool IsStatusStandingUp() { return Status == EKFBB_PlayerState::StandingUp; }
 	void SetStatus_Ready();
+	UFUNCTION(BlueprintCallable)
+	bool IsStatusReady() { return Status == EKFBB_PlayerState::Ready; }
 
 	UPROPERTY(EditDefaultsOnly)
 	float ExhaustedCooldownTime;
@@ -94,4 +106,7 @@ public:
 	float StandUpTime;
 
 	EKFBB_PlayerState::Type Status;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	int TestStatus;
 };

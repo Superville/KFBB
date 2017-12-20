@@ -4,16 +4,15 @@
 
 #include "CoreMinimal.h"
 #include "AIController.h"
-#include "KFBB_PlayerController.generated.h"
+#include "KFBB_AIController.generated.h"
 
 /**
  * 
  */
 UCLASS()
-class KFBB_API AKFBB_PlayerController : public AAIController
+class KFBB_API AKFBB_AIController : public AAIController
 {
 	GENERATED_BODY()
-	
 	
 public:
 	class AKFBB_PlayerPawn* MyPlayerPawn;
@@ -22,6 +21,5 @@ public:
 
 	/** Called on completing current movement request */
 	virtual void OnMoveCompleted(FAIRequestID RequestID, const FPathFollowingResult& Result) override;
-
 	
 };
