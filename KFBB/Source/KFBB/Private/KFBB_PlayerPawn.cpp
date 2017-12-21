@@ -4,6 +4,7 @@
 #include "KFBB_AIController.h"
 #include "KFBB_CoachPC.h"
 #include "KFBB_Field.h"
+#include "KFBB_Ball.h"
 #include "DrawDebugHelpers.h"
 
 // Sets default values
@@ -39,6 +40,18 @@ void AKFBB_PlayerPawn::Tick(float DeltaTime)
 		}
 	}
 
+	if (CanPickupBall())
+	{
+		if (TryPickupBall())
+		{
+			ClaimBall();
+		}
+		else
+		{
+			FumbleBall();
+		}
+	}
+
 	//debug
 	DrawDebugCurrentTile();
 	DrawDebugStatus();
@@ -48,7 +61,6 @@ void AKFBB_PlayerPawn::Tick(float DeltaTime)
 void AKFBB_PlayerPawn::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
-
 }
 
 void AKFBB_PlayerPawn::RegisterWithField()
@@ -85,16 +97,16 @@ void AKFBB_PlayerPawn::OnCooldownTimerExpired()
 
 	if (Status == EKFBB_PlayerState::KnockedDown)
 	{
-		SetStatus_StandUp();
+		SetStatus(EKFBB_PlayerState::StandingUp);
 	}
 	else if (Status == EKFBB_PlayerState::Stunned)
 	{
-		SetStatus_KnockedDown();
+		SetStatus(EKFBB_PlayerState::KnockedDown);
 	}
 	else if (Status == EKFBB_PlayerState::StandingUp || 
 			 Status == EKFBB_PlayerState::Exhausted)
 	{
-		SetStatus_Ready();
+		SetStatus(EKFBB_PlayerState::Ready);
 	}
 }
 bool AKFBB_PlayerPawn::IsPlayerOnCooldown() 
@@ -140,7 +152,7 @@ bool AKFBB_PlayerPawn::NotifyCommandGiven(UKFBB_FieldTile* DestinationTile)
 	{
 		if (MoveToTileLocation(DestinationTile))
 		{
-			SetStatus_Moving();
+			SetStatus(EKFBB_PlayerState::Moving);
 			return true;
 		}
 		else
@@ -163,7 +175,7 @@ void AKFBB_PlayerPawn::NotifyReachedDestination()
 {
 	if( Status == EKFBB_PlayerState::Moving)
 	{
-		SetStatus_Exhausted();
+		SetStatus(EKFBB_PlayerState::Exhausted);
 	}	
 }
 
@@ -174,77 +186,107 @@ void AKFBB_PlayerPawn::NotifyHit(class UPrimitiveComponent* MyComp, AActor* Othe
 	AKFBB_PlayerPawn* OtherPlayerPawn = Cast<AKFBB_PlayerPawn>(Other);
 	if (OtherPlayerPawn != nullptr)
 	{
-		SetStatus_KnockedDown();
-		OtherPlayerPawn->SetStatus_KnockedDown();
+		SetStatus(EKFBB_PlayerState::KnockedDown);
+		OtherPlayerPawn->SetStatus(EKFBB_PlayerState::KnockedDown);
 	}
 }
 
-void AKFBB_PlayerPawn::SetStatus_Moving()
+void AKFBB_PlayerPawn::SetStatus(EKFBB_PlayerState::Type newStatus)
 {
-	Status = EKFBB_PlayerState::Moving;
-
+	Status = newStatus;
 	TestStatus = Status;
 
-	//test
-	UE_LOG(LogTemp, Warning, TEXT("%s Moving"), *GetName());
-}
-
-void AKFBB_PlayerPawn::SetStatus_Exhausted()
-{
-	Status = EKFBB_PlayerState::Exhausted;
-	SetCooldownTimer(ExhaustedCooldownTime);
-
-	TestStatus = Status;
-
-	//test
-	UE_LOG(LogTemp, Warning, TEXT("%s Exhausted"), *GetName());
-}
-
-void AKFBB_PlayerPawn::SetStatus_KnockedDown()
-{
 	AAIController* ai = Cast<AAIController>(Controller);
-	ai->StopMovement();
-	MoveToTileLocation(CurrentTile);
-
-	Status = EKFBB_PlayerState::KnockedDown;
-	SetCooldownTimer(KnockedDownTime);
-
-	TestStatus = Status;
-
-	//test
-	UE_LOG(LogTemp, Warning, TEXT("%s Knocked Down"), *GetName());
-}
-
-void AKFBB_PlayerPawn::SetStatus_Stunned()
-{
-	Status = EKFBB_PlayerState::Stunned;
-	SetCooldownTimer(StunnedTime);
-
-	TestStatus = Status;
-
-	//test
-	UE_LOG(LogTemp, Warning, TEXT("%s Stunned!"), *GetName());
-}
-
-void AKFBB_PlayerPawn::SetStatus_StandUp()
-{
-	Status = EKFBB_PlayerState::StandingUp;
-	SetCooldownTimer(StandUpTime);
-
-	TestStatus = Status;
-
-	//test
-	UE_LOG(LogTemp, Warning, TEXT("%s Standup!"), *GetName());
-}
-
-void AKFBB_PlayerPawn::SetStatus_Ready()
-{
-	Status = EKFBB_PlayerState::Ready;
 	
-	TestStatus = Status;
-
+	switch (Status)
+	{
+	case EKFBB_PlayerState::Moving:
+		break;
+	case EKFBB_PlayerState::Exhausted:
+		SetCooldownTimer(ExhaustedCooldownTime);
+		break;
+	case EKFBB_PlayerState::KnockedDown:
+		ai->StopMovement();
+		MoveToTileLocation(CurrentTile);
+		SetCooldownTimer(KnockedDownTime);
+		break;
+	case EKFBB_PlayerState::Stunned:
+		SetCooldownTimer(StunnedTime);
+		break;
+	case EKFBB_PlayerState::StandingUp:
+		SetCooldownTimer(StandUpTime);
+		break;
+	case EKFBB_PlayerState::Ready:
+		break;
+	case EKFBB_PlayerState::GrabBall:
+		ai->StopMovement();
+		MoveToTileLocation(CurrentTile);
+		break;
+	}
+	
 	//test
-	UE_LOG(LogTemp, Warning, TEXT("%s Ready!"), *GetName());
+	UE_LOG(LogTemp, Warning, TEXT("%s SetStatus %s"), *GetName(), *GetStatusString());
+}
+
+bool AKFBB_PlayerPawn::HasBall() const
+{
+	return (Ball != nullptr);
+}
+
+bool AKFBB_PlayerPawn::CanPickupBall() const
+{
+	if (Status == EKFBB_PlayerState::Ready || 
+		Status == EKFBB_PlayerState::Exhausted ||
+		Status == EKFBB_PlayerState::Moving)
+	{
+		if (CurrentTile != nullptr && CurrentTile->HasBall() && HasBall() == false)
+		{
+			return true;
+		}
+	}
+
+	return false;
+}
+
+bool AKFBB_PlayerPawn::TryPickupBall() const
+{
+	return true;
+}
+
+void AKFBB_PlayerPawn::ClaimBall()
+{
+	if (CurrentTile == nullptr || CurrentTile->HasBall() == false)
+	{
+		//error!
+		return;
+	}
+
+	Ball = CurrentTile->GetBall();
+	if (Ball != nullptr)
+	{
+		Ball->RegisterWithPlayer(this);
+		SetStatus(EKFBB_PlayerState::GrabBall);
+	}
+}
+
+void AKFBB_PlayerPawn::AttachBall()
+{
+	if (Ball != nullptr)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("%s AttachBall %s"), *GetName(), *Ball->GetName());
+
+		Ball->AttachRootComponentToActor(this, FName("BallSocket"));
+		Ball->SetActorRelativeLocation(FVector::ZeroVector);
+		Ball->SetActorRelativeRotation(FRotator::ZeroRotator);
+
+		SetStatus(EKFBB_PlayerState::Ready);
+	}
+}
+
+void AKFBB_PlayerPawn::FumbleBall()
+{
+	// remove ball reference
+	// scatter ball to another tile
 }
 
 void AKFBB_PlayerPawn::DrawDebugCurrentTile() const
@@ -275,4 +317,12 @@ FColor AKFBB_PlayerPawn::GetDebugColor() const
 	else if (Status == EKFBB_PlayerState::Moving) { return FColor::Green; }
 	else if (Status == EKFBB_PlayerState::Exhausted) { return FColor::Orange; }
 	return FColor::Red;
+}
+
+FString AKFBB_PlayerPawn::GetStatusString() const
+{
+	const UEnum* EnumPtr = FindObject<UEnum>(ANY_PACKAGE, TEXT("EKFBB_PlayerState"), true);
+	if (!EnumPtr) return FString("Invalid");
+
+	return EnumPtr->GetNameStringByValue((int64)Status);
 }

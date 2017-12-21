@@ -12,12 +12,13 @@ namespace EKFBB_PlayerState
 {
 	enum Type
 	{
-		Ready,
-		KnockedDown,
-		Stunned,
-		StandingUp,
-		Moving,
-		Exhausted,
+		Ready		UMETA(DisplayName = "Ready"),
+		KnockedDown UMETA(DisplayName = "KnockedDown"),
+		Stunned		UMETA(DisplayName = "Stunned"),
+		StandingUp	UMETA(DisplayName = "StandingUp"),
+		Moving		UMETA(DisplayName = "Moving"),
+		Exhausted	UMETA(DisplayName = "Exhausted"),
+		GrabBall	UMETA(DisplayName = "GrabBall"),
 	};
 }
 
@@ -38,6 +39,7 @@ class KFBB_API AKFBB_PlayerPawn : public ACharacter
 	void DrawDebugCurrentTile() const;
 	void DrawDebugStatus() const;
 	FColor GetDebugColor() const;
+	FString GetStatusString() const;
 	
 public:
 	// Sets default values for this pawn's properties
@@ -77,24 +79,37 @@ public:
 	void NotifyReachedDestination();	
 
 	virtual void NotifyHit(class UPrimitiveComponent* MyComp, AActor* Other, class UPrimitiveComponent* OtherComp, bool bSelfMoved, FVector HitLocation, FVector HitNormal, FVector NormalImpulse, const FHitResult& Hit) override;
-	void SetStatus_Moving();
+
+	void SetStatus(EKFBB_PlayerState::Type newStatus);
+
 	UFUNCTION(BlueprintCallable)
 	bool IsStatusMoving() { return Status == EKFBB_PlayerState::Moving; }
-	void SetStatus_Exhausted();
 	UFUNCTION(BlueprintCallable)
 	bool IsStatusExhausted() { return Status == EKFBB_PlayerState::Exhausted; }
-	void SetStatus_KnockedDown();
 	UFUNCTION(BlueprintCallable)
 	bool IsStatusKnockedDown() { return Status == EKFBB_PlayerState::KnockedDown; }
-	void SetStatus_Stunned();
 	UFUNCTION(BlueprintCallable)
 	bool IsStatusStunned() { return Status == EKFBB_PlayerState::Stunned; }
-	void SetStatus_StandUp();
 	UFUNCTION(BlueprintCallable)
 	bool IsStatusStandingUp() { return Status == EKFBB_PlayerState::StandingUp; }
-	void SetStatus_Ready();
 	UFUNCTION(BlueprintCallable)
 	bool IsStatusReady() { return Status == EKFBB_PlayerState::Ready; }
+	UFUNCTION(BlueprintCallable)
+	bool IsGrabbingBall() { return Status == EKFBB_PlayerState::GrabBall; }
+
+
+	class AKFBB_Ball* Ball;
+	UFUNCTION(BlueprintCallable)
+	bool HasBall() const;
+	bool CanPickupBall() const;
+	bool TryPickupBall() const;
+	void ClaimBall();
+	UFUNCTION(BlueprintCallable)
+	void AttachBall();
+	void FumbleBall();
+
+
+
 
 	UPROPERTY(EditDefaultsOnly)
 	float ExhaustedCooldownTime;
@@ -105,7 +120,8 @@ public:
 	UPROPERTY(EditDefaultsOnly)
 	float StandUpTime;
 
-	EKFBB_PlayerState::Type Status;
+	UPROPERTY(BlueprintReadOnly)
+	TEnumAsByte<EKFBB_PlayerState::Type> Status;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	int TestStatus;

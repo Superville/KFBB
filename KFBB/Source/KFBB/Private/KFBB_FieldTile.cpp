@@ -3,6 +3,7 @@
 #include "KFBB_FieldTile.h"
 #include "KFBB_Field.h"
 #include "KFBB_PlayerPawn.h"
+#include "KFBB_Ball.h"
 #include "DrawDebugHelpers.h"
 
 void UKFBB_FieldTile::Init(AKFBB_Field* inField, int inIdx)
@@ -52,7 +53,7 @@ bool UKFBB_FieldTile::UnRegisterActor(AActor* a)
 	return (idx > 0);
 }
 
-bool UKFBB_FieldTile::HasPlayer()
+bool UKFBB_FieldTile::HasPlayer() const
 {
 	for (int i = 0; i < RegisteredActors.Num(); ++i)
 	{
@@ -64,12 +65,19 @@ bool UKFBB_FieldTile::HasPlayer()
 	return false;
 }
 
-bool UKFBB_FieldTile::HasBall()
+bool UKFBB_FieldTile::HasBall() const
 {
+	for (int i = 0; i < RegisteredActors.Num(); ++i)
+	{
+		if (RegisteredActors[i]->IsA(AKFBB_Ball::StaticClass()))
+		{
+			return true;
+		}
+	}
 	return false;
 }
 
-AKFBB_PlayerPawn* UKFBB_FieldTile::GetPlayer()
+AKFBB_PlayerPawn* UKFBB_FieldTile::GetPlayer() const
 {
 	for (int i = 0; i < RegisteredActors.Num(); ++i)
 	{
@@ -82,8 +90,16 @@ AKFBB_PlayerPawn* UKFBB_FieldTile::GetPlayer()
 	return nullptr;
 }
 
-AActor* UKFBB_FieldTile::GetBall()
+AKFBB_Ball* UKFBB_FieldTile::GetBall() const
 {
+	for (int i = 0; i < RegisteredActors.Num(); ++i)
+	{
+		AKFBB_Ball* b = Cast<AKFBB_Ball>(RegisteredActors[i]);
+		if (b != nullptr)
+		{
+			return b;
+		}
+	}
 	return nullptr;
 }
 
@@ -108,6 +124,11 @@ void UKFBB_FieldTile::DrawDebugTile(FVector offset) const
 	FColor color = GetDebugColor();
 
 	DrawDebugBox(MyWorld, TileLocation + offset, FVector(Field->TileSize, Field->TileSize, 0) * 0.5f, color);
+
+	if (HasBall())
+	{
+		DrawDebugCircle(MyWorld, TileLocation + offset, Field->TileSize * 0.5f, 8, color);
+	}
 }
 
 FColor UKFBB_FieldTile::GetDebugColor() const

@@ -46,14 +46,14 @@ public:
 	bool UnRegisterActor(AActor* a);
 
 	UFUNCTION(BlueprintCallable)
-	bool HasPlayer();
+	bool HasPlayer() const;
 	UFUNCTION(BlueprintCallable)
-	bool HasBall();
+	bool HasBall() const;
 
 	UFUNCTION(BlueprintCallable)
-	AKFBB_PlayerPawn* GetPlayer();
+	AKFBB_PlayerPawn* GetPlayer() const;
 	UFUNCTION(BlueprintCallable)
-	AActor* GetBall();
+	AKFBB_Ball* GetBall() const;
 
 
 
