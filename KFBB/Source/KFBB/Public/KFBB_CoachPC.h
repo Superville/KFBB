@@ -3,8 +3,6 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "KFBB_PlayerPawn.h"
-#include "KFBB_FieldTile.h"
 #include "GameFramework/PlayerController.h"
 #include "KFBB_CoachPC.generated.h"
 
@@ -36,6 +34,11 @@ public:
 	void SpawnPlayerOnTile(int x, int y);
 
 	UFUNCTION(BlueprintCallable)
+	void SpawnBallOnTile();
+	void SpawnBallOnTile(int x, int y);
+
+
+	UFUNCTION(BlueprintCallable)
 	void ClearTileSelection();
 
 	UPROPERTY(BlueprintReadonly)
@@ -48,6 +51,9 @@ public:
 
 	UPROPERTY(EditDefaultsOnly)
 	TSubclassOf<class AKFBB_PlayerPawn> PlayerClass;
+	UPROPERTY(EditDefaultsOnly)
+	TSubclassOf<class AKFBB_Ball> BallClass;
+
 
 	UPROPERTY(EditDefaultsOnly)
 	float PlayerSpawnOffsetZ;

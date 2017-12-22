@@ -2,6 +2,7 @@
 
 #include "KFBB_Field.h"
 #include "KFBB_FieldTile.h"
+#include "UnrealMathUtility.h"
 #include "DrawDebugHelpers.h"
 #include "EngineUtils.h"
 
@@ -44,6 +45,25 @@ bool AKFBB_Field::AssignFieldActor(AActor* src, AKFBB_Field*& ptrField)
 void AKFBB_Field::BeginPlay()
 {
 	Super::BeginPlay();
+
+	ScatterDirections.Add(FScatterDir(1, 0));
+	ScatterDirections.Add(FScatterDir(1, 1));
+	ScatterDirections.Add(FScatterDir(0, 1));
+	ScatterDirections.Add(FScatterDir(-1, 1));
+	ScatterDirections.Add(FScatterDir(-1, 0));
+	ScatterDirections.Add(FScatterDir(-1, -1));
+	ScatterDirections.Add(FScatterDir(0, -1));
+	ScatterDirections.Add(FScatterDir(1, -1));
+
+	auto TileList = GetComponentsByClass(UKFBB_FieldTile::StaticClass());
+	for (int i = 0; i < TileList.Num(); ++i)
+	{
+		UKFBB_FieldTile* t = Cast<UKFBB_FieldTile>(TileList[i]);
+		if (t != nullptr)
+		{
+			Tiles.Insert(t, t->idx);
+		}
+	}
 }
 
 void AKFBB_Field::Destroyed()
@@ -73,6 +93,13 @@ void AKFBB_Field::Init()
 			t->Init(this, i);
 		}		
 	}
+}
+
+UKFBB_FieldTile* AKFBB_Field::GetAdjacentTile(UKFBB_FieldTile* tile, FScatterDir dir)
+{
+	int idx = GetIndexByXY(tile->x + dir.x, tile->y + dir.y);
+	if(idx < 0) { return nullptr; }
+	return Tiles[idx];	
 }
 
 // Called every frame
@@ -117,3 +144,16 @@ FVector AKFBB_Field::GetFieldTileLocation(int x, int y) const
 	}
 	return FVector::ZeroVector;
 }
+
+FScatterDir AKFBB_Field::GetScatterDirection(short centerX, short centerY, int cone)
+{
+	FScatterDir c(centerX, centerY);
+	int idx = FMath::Max(ScatterDirections.Find(c),0);
+	int offset = FMath::RandRange(FMath::Max(-3, -cone), cone);
+	idx += offset;
+	while (idx < 0) { idx += ScatterDirections.Num(); }
+	while (idx >= ScatterDirections.Num()) { idx -= ScatterDirections.Num(); }
+
+	return ScatterDirections[idx];
+}
+

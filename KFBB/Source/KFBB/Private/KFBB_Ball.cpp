@@ -4,14 +4,16 @@
 #include "KFBB_PlayerPawn.h"
 #include "KFBB_Field.h"
 #include "KFBB_FieldTile.h"
+#include "UnrealMathUtility.h"
 #include "DrawDebugHelpers.h"
+
+#include "KFBB_BallMovementComponent.h"
 
 // Sets default values
 AKFBB_Ball::AKFBB_Ball()
 {
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
-
 }
 
 // Called when the game starts or when spawned
@@ -32,6 +34,9 @@ void AKFBB_Ball::Tick(float DeltaTime)
 
 	//debug
 	DrawDebugCurrentTile();
+
+	//test
+	Test();
 }
 
 void AKFBB_Ball::RegisterWithField()
@@ -88,10 +93,22 @@ void AKFBB_Ball::UnRegisterWithPlayer()
 	OwningPlayer = nullptr;
 }
 
+bool AKFBB_Ball::IsMoving()
+{
+	auto v = GetVelocity();
+	return (v.Size() > 100.f);
+}
+
 void AKFBB_Ball::DrawDebugCurrentTile() const
 {
 	if (Field == nullptr || CurrentTile == nullptr)
 		return;
 
 	CurrentTile->DrawDebugTile(FVector(0, 0, 2));
+}
+
+void AKFBB_Ball::Test()
+{
+	auto bmc = Cast<UKFBB_BallMovementComponent>(GetComponentByClass(UKFBB_BallMovementComponent::StaticClass()));
+	bmc->Test();
 }

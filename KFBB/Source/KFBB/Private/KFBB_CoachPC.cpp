@@ -3,7 +3,11 @@
 #include "KFBB_CoachPC.h"
 #include "KFBB_Field.h"
 #include "KFBB_FieldTile.h"
+
+#include "KFBB_PlayerPawn.h"
+
 #include "AIController.h"
+#include "KFBB_Ball.h"
 #include "EngineUtils.h"
 #include "DrawDebugHelpers.h"
 
@@ -131,6 +135,33 @@ void AKFBB_CoachPC::SpawnPlayerOnTile(int x, int y)
 
 	AKFBB_PlayerPawn* P = World->SpawnActor<AKFBB_PlayerPawn>(PlayerClass, SpawnTrans, SpawnParams);
 	P->Coach = this;
+}
+
+void AKFBB_CoachPC::SpawnBallOnTile()
+{
+	int x = 0, y = 0;
+	if (SelectedTile != nullptr)
+	{
+		x = SelectedTile->x;
+		y = SelectedTile->y;
+	}
+
+	SpawnBallOnTile(x, y);
+}
+
+void AKFBB_CoachPC::SpawnBallOnTile(int x, int y)
+{
+	if (BallClass == nullptr)
+		return;
+
+	auto World = GetWorld();
+
+	FTransform SpawnTrans;
+	SpawnTrans.SetLocation(Field->GetFieldTileLocation(x, y) + FVector(0, 0, PlayerSpawnOffsetZ));
+	FActorSpawnParameters SpawnParams;
+	SpawnParams.bNoFail = true;
+
+	AKFBB_Ball* P = World->SpawnActor<AKFBB_Ball>(BallClass, SpawnTrans, SpawnParams);
 }
 
 void AKFBB_CoachPC::ClearTileSelection()

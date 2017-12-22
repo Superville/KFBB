@@ -6,6 +6,7 @@
 #include "GameFramework/Actor.h"
 #include "KFBB_Ball.generated.h"
 
+
 UCLASS()
 class KFBB_API AKFBB_Ball : public AActor
 {
@@ -13,7 +14,7 @@ class KFBB_API AKFBB_Ball : public AActor
 
 	void RegisterWithField();
 	void RegisterWithTile(class UKFBB_FieldTile* Tile);
-
+	
 public:	
 	// Sets default values for this actor's properties
 	AKFBB_Ball();
@@ -37,7 +38,11 @@ public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
-	
-	
+
+	bool IsMoving();
+
 	void DrawDebugCurrentTile() const;
+
+	//test
+	void Test();
 };

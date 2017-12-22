@@ -4,8 +4,11 @@
 #include "KFBB_AIController.h"
 #include "KFBB_CoachPC.h"
 #include "KFBB_Field.h"
+#include "KFBB_FieldTile.h"
 #include "KFBB_Ball.h"
 #include "DrawDebugHelpers.h"
+
+#include "KFBB_BallMovementComponent.h"
 
 // Sets default values
 AKFBB_PlayerPawn::AKFBB_PlayerPawn()
@@ -40,9 +43,9 @@ void AKFBB_PlayerPawn::Tick(float DeltaTime)
 		}
 	}
 
-	if (CanPickupBall())
+	if (CurrentTile != nullptr && CurrentTile->HasBall())
 	{
-		if (TryPickupBall())
+		if (CanPickupBall() && TryPickupBall())
 		{
 			ClaimBall();
 		}
@@ -224,8 +227,7 @@ void AKFBB_PlayerPawn::SetStatus(EKFBB_PlayerState::Type newStatus)
 		break;
 	}
 	
-	//test
-	UE_LOG(LogTemp, Warning, TEXT("%s SetStatus %s"), *GetName(), *GetStatusString());
+//	UE_LOG(LogTemp, Warning, TEXT("%s SetStatus %s"), *GetName(), *GetStatusString());
 }
 
 bool AKFBB_PlayerPawn::HasBall() const
@@ -235,11 +237,13 @@ bool AKFBB_PlayerPawn::HasBall() const
 
 bool AKFBB_PlayerPawn::CanPickupBall() const
 {
+	return false;
+
 	if (Status == EKFBB_PlayerState::Ready || 
 		Status == EKFBB_PlayerState::Exhausted ||
 		Status == EKFBB_PlayerState::Moving)
 	{
-		if (CurrentTile != nullptr && CurrentTile->HasBall() && HasBall() == false)
+		if (HasBall() == false)
 		{
 			return true;
 		}
@@ -275,7 +279,8 @@ void AKFBB_PlayerPawn::AttachBall()
 	{
 		UE_LOG(LogTemp, Warning, TEXT("%s AttachBall %s"), *GetName(), *Ball->GetName());
 
-		Ball->AttachRootComponentToActor(this, FName("BallSocket"));
+		const FAttachmentTransformRules atr(EAttachmentRule::KeepRelative,true);
+		Ball->AttachToActor(this, atr, FName("BallSocket"));
 		Ball->SetActorRelativeLocation(FVector::ZeroVector);
 		Ball->SetActorRelativeRotation(FRotator::ZeroRotator);
 
@@ -283,10 +288,35 @@ void AKFBB_PlayerPawn::AttachBall()
 	}
 }
 
+
 void AKFBB_PlayerPawn::FumbleBall()
 {
-	// remove ball reference
-	// scatter ball to another tile
+	auto b = CurrentTile->GetBall();
+	auto v = b->GetVelocity();
+	if (b->IsMoving())
+	{
+		return;
+	}
+
+	if (Ball != nullptr)
+	{
+		const FDetachmentTransformRules dtr(EDetachmentRule::KeepWorld, false);
+		Ball->DetachFromActor(dtr);
+		Ball = nullptr;
+	}
+	auto destTile = Field->GetAdjacentTile(CurrentTile, Field->GetScatterDirection(0, 0, 4));
+
+//	auto MyWorld = GetWorld();
+//	UGameplayStatics::SuggestProjectileVelocity(MyWorld,)
+
+	FVector ballVelocity = (destTile->TileLocation - CurrentTile->TileLocation).GetSafeNormal2D() * 100;
+	ballVelocity.Z += 250;
+
+	auto smc = Cast<UStaticMeshComponent>(b->GetRootComponent());
+	if (smc != nullptr)
+	{
+		smc->SetPhysicsLinearVelocity(ballVelocity);
+	}
 }
 
 void AKFBB_PlayerPawn::DrawDebugCurrentTile() const
