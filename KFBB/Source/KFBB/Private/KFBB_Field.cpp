@@ -73,11 +73,11 @@ void AKFBB_Field::Destroyed()
 
 void AKFBB_Field::Init()
 {
-	if (Length == 0)		 Length = 16;
-	if (Width == 0)		 Width = 11;
-	if (TileSize == 0.f)  TileSize = 64.f;
-	if (EndZoneSize == 0) EndZoneSize = 1;
-	if (WideOutSize == 0) WideOutSize = 3;
+	if (Length == 0)		Length = 16;
+	if (Width == 0)			Width = 11;
+	if (TileSize == 0.f)	TileSize = 48.f;
+	if (EndZoneSize == 0)	EndZoneSize = 1;
+	if (WideOutSize == 0)	WideOutSize = 3;
 
 	auto FieldWidthDist = TileSize * Width;
 	auto FieldLengthDist = TileSize * Length;

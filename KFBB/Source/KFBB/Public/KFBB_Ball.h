@@ -14,6 +14,9 @@ class KFBB_API AKFBB_Ball : public AActor
 
 	void RegisterWithField();
 	void RegisterWithTile(class UKFBB_FieldTile* Tile);
+
+	bool bOnGround;
+	float LastFumbleTime;
 	
 public:	
 	// Sets default values for this actor's properties
@@ -40,6 +43,9 @@ public:
 
 
 	bool IsMoving();
+	void StopMovement();
+	void FumbleBall(UKFBB_FieldTile* DestTile);
+	float TimeSinceLastFumble() const;
 
 	void DrawDebugCurrentTile() const;
 

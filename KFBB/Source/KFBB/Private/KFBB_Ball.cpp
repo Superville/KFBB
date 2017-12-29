@@ -31,6 +31,10 @@ void AKFBB_Ball::Tick(float DeltaTime)
 	Super::Tick(DeltaTime);
 
 	RegisterWithField();
+	if(!IsMoving() && TimeSinceLastFumble() > 1.f)
+	{
+		StopMovement();
+	}
 
 	//debug
 	DrawDebugCurrentTile();
@@ -41,6 +45,7 @@ void AKFBB_Ball::Tick(float DeltaTime)
 
 void AKFBB_Ball::RegisterWithField()
 {
+	bOnGround = false;
 	if (OwningPlayer != nullptr)
 	{
 		RegisterWithTile(OwningPlayer->CurrentTile);
@@ -51,16 +56,35 @@ void AKFBB_Ball::RegisterWithField()
 		FVector Loc = GetActorLocation();
 
 		FHitResult Hit;
-		if (MyWorld->LineTraceSingleByChannel(Hit, Loc, Loc + FVector(0, 0, -1000), ECollisionChannel::ECC_Visibility))
+		FCollisionQueryParams CollisionParams;
+		CollisionParams.AddIgnoredActor(this);
+
+		if (MyWorld->LineTraceSingleByChannel(Hit, Loc, Loc + FVector(0, 0, -1000), ECollisionChannel::ECC_Visibility, CollisionParams))
 		{
+			//test
+			auto hc = Hit.GetComponent();
+
 			UKFBB_FieldTile* Tile = Cast<UKFBB_FieldTile>(Hit.GetComponent());
 			RegisterWithTile(Tile);
+
+			auto distFromGround = (Loc - Hit.Location).Size();
+			constexpr float distFromGroundThreshold = 10.f;
+			if (distFromGround < distFromGroundThreshold)
+			{
+				bOnGround = true;
+			}
 		}
 	}
 }
 
 void AKFBB_Ball::RegisterWithTile(class UKFBB_FieldTile* Tile)
 {
+	//test
+	if (Tile == nullptr)
+	{
+		int i = 0;
+	}
+
 	if (CurrentTile != Tile)
 	{
 		if (CurrentTile != nullptr) { CurrentTile->UnRegisterActor(this); }
@@ -93,10 +117,51 @@ void AKFBB_Ball::UnRegisterWithPlayer()
 	OwningPlayer = nullptr;
 }
 
+void AKFBB_Ball::FumbleBall(UKFBB_FieldTile* DestTile)
+{
+	auto smc = Cast<UStaticMeshComponent>(GetRootComponent());
+	if (smc != nullptr)
+	{
+		FVector ballVel = (DestTile->TileLocation - CurrentTile->TileLocation).GetSafeNormal2D() * 100;
+		ballVel.Z += 250;
+
+		FVector ballAngVel = FMath::VRand() * (FMath::FRandRange(-10.f, 10.f));
+
+		smc->SetPhysicsLinearVelocity(ballVel);
+		smc->SetPhysicsAngularVelocityInDegrees(ballAngVel);
+	}
+
+	LastFumbleTime = GetWorld()->TimeSeconds;
+}
+
+float AKFBB_Ball::TimeSinceLastFumble() const
+{
+	return (GetWorld()->TimeSeconds - LastFumbleTime);
+}
+
 bool AKFBB_Ball::IsMoving()
 {
-	auto v = GetVelocity();
-	return (v.Size() > 100.f);
+	if (bOnGround)
+	{
+		auto v = GetVelocity();
+		constexpr float ZVelocityThreshold = 5.f;
+		if (FMath::Abs(v.Z) < 5.f)
+		{
+			return false;
+		}
+	}
+
+	return true;
+}
+
+void AKFBB_Ball::StopMovement()
+{
+	auto smc = Cast<UStaticMeshComponent>(GetRootComponent());
+	if (smc != nullptr)
+	{
+		smc->SetPhysicsLinearVelocity(FVector::ZeroVector);
+		smc->SetPhysicsAngularVelocityInDegrees(FVector::ZeroVector);
+	}
 }
 
 void AKFBB_Ball::DrawDebugCurrentTile() const

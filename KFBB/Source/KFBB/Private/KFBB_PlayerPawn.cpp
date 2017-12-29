@@ -309,14 +309,7 @@ void AKFBB_PlayerPawn::FumbleBall()
 //	auto MyWorld = GetWorld();
 //	UGameplayStatics::SuggestProjectileVelocity(MyWorld,)
 
-	FVector ballVelocity = (destTile->TileLocation - CurrentTile->TileLocation).GetSafeNormal2D() * 100;
-	ballVelocity.Z += 250;
-
-	auto smc = Cast<UStaticMeshComponent>(b->GetRootComponent());
-	if (smc != nullptr)
-	{
-		smc->SetPhysicsLinearVelocity(ballVelocity);
-	}
+	b->FumbleBall(destTile);
 }
 
 void AKFBB_PlayerPawn::DrawDebugCurrentTile() const
