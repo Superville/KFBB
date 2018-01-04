@@ -4,6 +4,7 @@
 #include "KFBB_Field.h"
 #include "KFBB_PlayerPawn.h"
 #include "KFBB_Ball.h"
+#include "KFBB.h"
 #include "DrawDebugHelpers.h"
 
 void UKFBB_FieldTile::Init(AKFBB_Field* inField, int inIdx)
@@ -29,16 +30,19 @@ void UKFBB_FieldTile::Init(AKFBB_Field* inField, int inIdx)
 		bScrimmageLine = true;
 	}
 
+	SetStaticMesh(Field->TileMesh);
 	SetWorldLocation(TileLocation - (Field->TileStep*0.5f));
-	SetRelativeScale3D(FVector(Field->TileSize / 400.f, Field->TileSize / 400.f, 1.f));
-
+	auto bounds = Field->TileMesh->GetBounds().BoxExtent * 2;
+	auto scale = FVector(Field->TileSize, Field->TileSize, 20.f) / bounds;
+	SetRelativeScale3D(scale);
+	
 	// Set visual appearance of the tile
 	if (bEndZone) SetMaterial(0, Field->Mat_EndZone);
 	else if (bWideOut) SetMaterial(0, Field->Mat_WideOut);
 	else if (bScrimmageLine) SetMaterial(0, Field->Mat_Scrimmage);
 	else SetMaterial(0, Field->Mat_Field);
 
-//	SetCanEverAffectNavigation(false);
+	SetCollisionResponseToChannel(ECC_FieldTrace, ECollisionResponse::ECR_Block);
 }
 
 bool UKFBB_FieldTile::RegisterActor(AActor* a)

@@ -1,3 +1,8 @@
+
+
+
+
+
 // Fill out your copyright notice in the Description page of Project Settings.
 
 #include "KFBB_Field.h"
@@ -9,9 +14,17 @@
 // Sets default values
 AKFBB_Field::AKFBB_Field()
 {
- 	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
+	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 
+}
+
+AKFBB_Field::AKFBB_Field(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer)
+{
+	Root = ObjectInitializer.CreateAbstractDefaultSubobject<USceneComponent>(this, TEXT("Root"));
+	RootComponent = Root;
+
+	Tiles = TArray<UKFBB_FieldTile*>();
 }
 
 bool AKFBB_Field::AssignFieldActor(AActor* src, AKFBB_Field*& ptrField)
@@ -37,7 +50,7 @@ bool AKFBB_Field::AssignFieldActor(AActor* src, AKFBB_Field*& ptrField)
 	{
 		UE_LOG(LogTemp, Error, TEXT("AKFBB_Field::AssignFieldActor - Failed to find AKFBB_Field Actor (Called by %s)"), *src->GetName());
 	}
-	
+
 	return (ptrField != nullptr);
 }
 
@@ -71,35 +84,41 @@ void AKFBB_Field::Destroyed()
 	Super::Destroyed();
 }
 
-void AKFBB_Field::Init()
+void AKFBB_Field::OnConstruction(const FTransform& Transform)
 {
+	Super::OnConstruction(Transform);
+
 	if (Length == 0)		Length = 16;
 	if (Width == 0)			Width = 11;
 	if (TileSize == 0.f)	TileSize = 48.f;
 	if (EndZoneSize == 0)	EndZoneSize = 1;
 	if (WideOutSize == 0)	WideOutSize = 3;
 
+	Tiles.Empty();
+
 	auto FieldWidthDist = TileSize * Width;
 	auto FieldLengthDist = TileSize * Length;
 	Origin = GetActorLocation() - FVector(FieldWidthDist * 0.5f, FieldLengthDist * 0.5f, 0.f);
 	TileStep = FVector(TileSize, TileSize, 0.f);
 
-	auto TileList = GetComponentsByClass(UKFBB_FieldTile::StaticClass());
-	for (int i = 0; i < TileList.Num(); ++i)
+	FAttachmentTransformRules atr(EAttachmentRule::KeepWorld, true);
+	int totalTiles = Width * Length;
+	for (int i = 0; i < totalTiles; ++i)
 	{
-		UKFBB_FieldTile* t = Cast<UKFBB_FieldTile>(TileList[i]);
-		if (t != nullptr)
-		{
-			t->Init(this, i);
-		}		
+		UKFBB_FieldTile* t = NewObject<UKFBB_FieldTile>(this);
+		t->AttachToComponent(RootComponent, FAttachmentTransformRules::KeepRelativeTransform);
+		t->RegisterComponent();
+		t->Init(this, i);
+
+		Tiles.Add(t);
 	}
 }
 
 UKFBB_FieldTile* AKFBB_Field::GetAdjacentTile(UKFBB_FieldTile* tile, FScatterDir dir)
 {
 	int idx = GetIndexByXY(tile->x + dir.x, tile->y + dir.y);
-	if(idx < 0) { return nullptr; }
-	return Tiles[idx];	
+	if (idx < 0) { return nullptr; }
+	return Tiles[idx];
 }
 
 // Called every frame
@@ -148,7 +167,7 @@ FVector AKFBB_Field::GetFieldTileLocation(int x, int y) const
 FScatterDir AKFBB_Field::GetScatterDirection(short centerX, short centerY, int cone)
 {
 	FScatterDir c(centerX, centerY);
-	int idx = FMath::Max(ScatterDirections.Find(c),0);
+	int idx = FMath::Max(ScatterDirections.Find(c), 0);
 	int offset = FMath::RandRange(FMath::Max(-3, -cone), cone);
 	idx += offset;
 	while (idx < 0) { idx += ScatterDirections.Num(); }
@@ -156,4 +175,5 @@ FScatterDir AKFBB_Field::GetScatterDirection(short centerX, short centerY, int c
 
 	return ScatterDirections[idx];
 }
+
 

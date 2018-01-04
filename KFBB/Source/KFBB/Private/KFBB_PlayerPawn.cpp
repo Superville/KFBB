@@ -6,6 +6,7 @@
 #include "KFBB_Field.h"
 #include "KFBB_FieldTile.h"
 #include "KFBB_Ball.h"
+#include "KFBB.h"
 #include "DrawDebugHelpers.h"
 
 #include "KFBB_BallMovementComponent.h"
@@ -15,7 +16,6 @@ AKFBB_PlayerPawn::AKFBB_PlayerPawn()
 {
  	// Set this pawn to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
-
 }
 
 // Called when the game starts or when spawned
@@ -72,7 +72,7 @@ void AKFBB_PlayerPawn::RegisterWithField()
 	FVector Loc = GetActorLocation();
 
 	FHitResult Hit;
-	if (MyWorld->LineTraceSingleByChannel(Hit, Loc, Loc + FVector(0,0,-1000), ECollisionChannel::ECC_Visibility))
+	if (MyWorld->LineTraceSingleByChannel(Hit, Loc, Loc + FVector(0,0,-1000), ECollisionChannel::ECC_FieldTrace))
 	{
 		UKFBB_FieldTile* Tile = Cast<UKFBB_FieldTile>(Hit.GetComponent());
 		RegisterWithTile(Tile);

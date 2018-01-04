@@ -11,7 +11,7 @@ struct FScatterDir
 {
 	GENERATED_BODY()
 
-	FScatterDir() : x(0), y(0) {}
+		FScatterDir() : x(0), y(0) {}
 	FScatterDir(short _x, short _y) : x(_x), y(_y) {}
 	short x;
 	short y;
@@ -25,8 +25,14 @@ class KFBB_API AKFBB_Field : public AActor
 {
 	GENERATED_BODY()
 
+		AKFBB_Field(const FObjectInitializer& ObjectInitializer);
+	virtual void OnConstruction(const FTransform& Transform) override;
+
+
 	TArray<class UKFBB_FieldTile*> Tiles;
-public:	
+
+
+public:
 	// Sets default values for this actor's properties
 	AKFBB_Field();
 
@@ -35,7 +41,7 @@ protected:
 	virtual void BeginPlay() override;
 	virtual void Destroyed() override;
 
-public:	
+public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
@@ -53,6 +59,10 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	int WideOutSize;
 
+	UPROPERTY()
+	class USceneComponent* Root;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UStaticMesh* TileMesh;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	UMaterial* Mat_Field;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
@@ -61,7 +71,7 @@ public:
 	UMaterial* Mat_WideOut;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	UMaterial* Mat_Scrimmage;
-	
+
 	UPROPERTY(BlueprintReadOnly)
 	FVector Origin;
 	UPROPERTY(BlueprintReadOnly)
@@ -81,11 +91,9 @@ public:
 	UFUNCTION(BlueprintPure)
 	FVector GetFieldTileLocation(int x, int y) const;
 
-	UFUNCTION(BlueprintCallable)
-	void Init();
-
-
 	TArray<struct FScatterDir> ScatterDirections;
 	FScatterDir GetScatterDirection(short centerX = 0, short centerY = 0, int cone = 4);
 	class UKFBB_FieldTile* GetAdjacentTile(class UKFBB_FieldTile* tile, FScatterDir dir);
 };
+
+

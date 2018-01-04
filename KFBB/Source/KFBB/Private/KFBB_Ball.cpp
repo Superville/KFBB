@@ -4,6 +4,7 @@
 #include "KFBB_PlayerPawn.h"
 #include "KFBB_Field.h"
 #include "KFBB_FieldTile.h"
+#include "KFBB.h"
 #include "UnrealMathUtility.h"
 #include "DrawDebugHelpers.h"
 
@@ -59,7 +60,7 @@ void AKFBB_Ball::RegisterWithField()
 		FCollisionQueryParams CollisionParams;
 		CollisionParams.AddIgnoredActor(this);
 
-		if (MyWorld->LineTraceSingleByChannel(Hit, Loc, Loc + FVector(0, 0, -1000), ECollisionChannel::ECC_Visibility, CollisionParams))
+		if (MyWorld->LineTraceSingleByChannel(Hit, Loc, Loc + FVector(0, 0, -1000), ECollisionChannel::ECC_FieldTrace, CollisionParams))
 		{
 			//test
 			auto hc = Hit.GetComponent();
