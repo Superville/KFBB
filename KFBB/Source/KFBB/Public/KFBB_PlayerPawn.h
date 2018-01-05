@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "Engine/DataTable.h"
 #include "GameFramework/Character.h"
 #include "KFBB_PlayerPawn.generated.h"
 
@@ -21,6 +22,54 @@ namespace EKFBB_PlayerState
 		GrabBall	UMETA(DisplayName = "GrabBall"),
 	};
 }
+
+USTRUCT(BlueprintType)
+struct FKFBB_PlayerData : public FTableRowBase
+{
+	GENERATED_USTRUCT_BODY()
+
+public:
+	FKFBB_PlayerData()
+		: Race("Undefined")
+		, Position("Undefined")
+		, Cost(0)
+		, MA(0)
+		, ST(0)
+		, AG(0)
+		, AV(0)
+	{}
+
+	/** Player Race Title */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = PlayerData)
+	FString Race;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = PlayerData)
+	/** Player Position Title */
+	FString Position;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = PlayerData)
+	int32 Cost;
+	/** Player Attribute: Movement */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = PlayerData)
+	int32 MA;
+	/** Player Attribute: Strength */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = PlayerData)
+	int32 ST;
+	/** Player Attribute: Agility*/
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = PlayerData)
+	int32 AG;
+	/** Player Attribute: Armor Value */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = PlayerData)
+	int32 AV;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = PlayerData)
+	float ExhaustCD;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = PlayerData)
+	float KnockCD;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = PlayerData)
+	float StunCD;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = PlayerData)
+	float StandCD;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = PlayerData)
+	TSoftClassPtr<class AKFBB_PlayerPawn> PlayerClassReference;
+};
 
 
 UCLASS()
@@ -101,7 +150,7 @@ public:
 	class AKFBB_Ball* Ball;
 	UFUNCTION(BlueprintCallable)
 	bool HasBall() const;
-	bool CanPickupBall() const;
+	bool CanPickupBall(AKFBB_Ball* ball) const;
 	bool TryPickupBall() const;
 	void ClaimBall();
 	UFUNCTION(BlueprintCallable)
@@ -111,18 +160,39 @@ public:
 
 
 
-	UPROPERTY(EditDefaultsOnly)
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = PlayerData)
 	float ExhaustedCooldownTime;
-	UPROPERTY(EditDefaultsOnly)
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = PlayerData)
 	float KnockedDownTime;
-	UPROPERTY(EditDefaultsOnly)
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = PlayerData)
 	float StunnedTime;
-	UPROPERTY(EditDefaultsOnly)
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = PlayerData)
 	float StandUpTime;
 
 	UPROPERTY(BlueprintReadOnly)
 	TEnumAsByte<EKFBB_PlayerState::Type> Status;
-
+	//test
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	int TestStatus;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+	class UDataTable* PlayerDataTable;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = PlayerData)
+	FString Race;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = PlayerData)
+	FString Position;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = PlayerData)
+	int32 Cost;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = PlayerData)
+	int32 MA;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = PlayerData)
+	int32 ST;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = PlayerData)
+	int32 AG;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = PlayerData)
+	int32 AV;
+
+	void LoadAttributesFromPlayerData(const FKFBB_PlayerData& data);
+	UFUNCTION(BlueprintCallable)
+	void LoadAttributesByDataName(FString RowName);
 };

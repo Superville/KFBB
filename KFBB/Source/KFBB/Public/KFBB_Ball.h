@@ -42,10 +42,11 @@ public:
 	virtual void Tick(float DeltaTime) override;
 
 
-	bool IsMoving();
+	bool IsMoving() const;
 	void StopMovement();
 	void FumbleBall(UKFBB_FieldTile* DestTile);
 	float TimeSinceLastFumble() const;
+	bool CanBePickedUp() const;
 
 	void DrawDebugCurrentTile() const;
 

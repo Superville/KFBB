@@ -140,7 +140,12 @@ float AKFBB_Ball::TimeSinceLastFumble() const
 	return (GetWorld()->TimeSeconds - LastFumbleTime);
 }
 
-bool AKFBB_Ball::IsMoving()
+bool AKFBB_Ball::CanBePickedUp() const
+{
+	return (!IsMoving() && TimeSinceLastFumble() > 1.f);
+}
+
+bool AKFBB_Ball::IsMoving() const
 {
 	if (bOnGround)
 	{

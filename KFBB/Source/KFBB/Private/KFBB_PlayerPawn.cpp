@@ -8,7 +8,6 @@
 #include "KFBB_Ball.h"
 #include "KFBB.h"
 #include "DrawDebugHelpers.h"
-
 #include "KFBB_BallMovementComponent.h"
 
 // Sets default values
@@ -45,7 +44,8 @@ void AKFBB_PlayerPawn::Tick(float DeltaTime)
 
 	if (CurrentTile != nullptr && CurrentTile->HasBall())
 	{
-		if (CanPickupBall() && TryPickupBall())
+		auto ball = CurrentTile->GetBall();
+		if (CanPickupBall(ball) && TryPickupBall())
 		{
 			ClaimBall();
 		}
@@ -136,6 +136,9 @@ bool AKFBB_PlayerPawn::CanAcceptCommand()
 
 bool AKFBB_PlayerPawn::MoveToTileLocation(UKFBB_FieldTile* Tile)
 {
+	if (Tile == nullptr)
+		return false;
+
 	AAIController* ai = Cast<AAIController>(Controller);
 	if (ai != nullptr)
 	{
@@ -210,7 +213,10 @@ void AKFBB_PlayerPawn::SetStatus(EKFBB_PlayerState::Type newStatus)
 		break;
 	case EKFBB_PlayerState::KnockedDown:
 		ai->StopMovement();
-		MoveToTileLocation(CurrentTile);
+		if (CurrentTile != nullptr)
+		{
+			MoveToTileLocation(CurrentTile);
+		}
 		SetCooldownTimer(KnockedDownTime);
 		break;
 	case EKFBB_PlayerState::Stunned:
@@ -223,7 +229,10 @@ void AKFBB_PlayerPawn::SetStatus(EKFBB_PlayerState::Type newStatus)
 		break;
 	case EKFBB_PlayerState::GrabBall:
 		ai->StopMovement();
-		MoveToTileLocation(CurrentTile);
+		if (CurrentTile != nullptr)
+		{
+			MoveToTileLocation(CurrentTile);
+		}
 		break;
 	}
 	
@@ -235,15 +244,13 @@ bool AKFBB_PlayerPawn::HasBall() const
 	return (Ball != nullptr);
 }
 
-bool AKFBB_PlayerPawn::CanPickupBall() const
+bool AKFBB_PlayerPawn::CanPickupBall(AKFBB_Ball* ball) const
 {
-	return false;
-
 	if (Status == EKFBB_PlayerState::Ready || 
 		Status == EKFBB_PlayerState::Exhausted ||
 		Status == EKFBB_PlayerState::Moving)
 	{
-		if (HasBall() == false)
+		if (HasBall() == false && ball->CanBePickedUp())
 		{
 			return true;
 		}
@@ -254,7 +261,13 @@ bool AKFBB_PlayerPawn::CanPickupBall() const
 
 bool AKFBB_PlayerPawn::TryPickupBall() const
 {
-	return true;
+	auto roll = FMath::RandRange(1, 6);
+	int chance = 4;
+
+	//test
+	UE_LOG(LogTemp, Warning, TEXT("%s Try Pickup Ball Chance %d Roll %d - %s"), *GetName(), chance, roll, (roll >= chance) ? TEXT("Success!") : TEXT("Fumble!"));
+	
+	return (roll >= chance);
 }
 
 void AKFBB_PlayerPawn::ClaimBall()
@@ -348,4 +361,33 @@ FString AKFBB_PlayerPawn::GetStatusString() const
 	if (!EnumPtr) return FString("Invalid");
 
 	return EnumPtr->GetNameStringByValue((int64)Status);
+}
+
+void AKFBB_PlayerPawn::LoadAttributesFromPlayerData(const FKFBB_PlayerData& data)
+{
+	Race = data.Race;
+	Position = data.Position;
+	Cost = data.Cost;
+	MA = data.MA;
+	ST = data.ST;
+	AG = data.AG;
+	AV = data.AV;
+	
+	ExhaustedCooldownTime = data.ExhaustCD;
+	KnockedDownTime = data.KnockCD;
+	StunnedTime = data.StunCD;
+	StandUpTime = data.StandCD;
+}
+
+void AKFBB_PlayerPawn::LoadAttributesByDataName(FString RowName)
+{
+	if (PlayerDataTable)
+	{
+		static const FString ContextString(TEXT("GENERAL"));
+		FKFBB_PlayerData* r = PlayerDataTable->FindRow<FKFBB_PlayerData>(FName(*RowName),ContextString);
+		if (r != nullptr)
+		{
+			LoadAttributesFromPlayerData(*r);
+		}
+	}
 }

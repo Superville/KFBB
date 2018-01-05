@@ -1,0 +1,12 @@
+,Race,Position,Cost,MA,ST,AG,AV,ExhaustCD,KnockCD,StunCD,StandCD,PlayerClassReference
+Human_Lineman,Human,Lineman,50000,3,3,3,8,2,2,2,1,"""Blueprint'/Game/KFBB/Player/KFBB_PlayerPawn_BP.KFBB_PlayerPawn_BP'"""
+Human_Catcher,Human,Catcher,70000,4,2,3,8,2,2,2,1,"""Blueprint'/Game/KFBB/Player/KFBB_PlayerPawn_BP.KFBB_PlayerPawn_BP'"""
+Human_Thrower,Human,Thrower,70000,3,3,3,8,2,2,2,1,"""Blueprint'/Game/KFBB/Player/KFBB_PlayerPawn_BP.KFBB_PlayerPawn_BP'"""
+Human_Blitzer,Human,Blitzer,90000,3,3,3,8,2,2,2,1,"""Blueprint'/Game/KFBB/Player/KFBB_PlayerPawn_BP.KFBB_PlayerPawn_BP'"""
+Human_Ogre,Human,Ogre,130000,2,5,2,9,2,2,2,1,"""Blueprint'/Game/KFBB/Player/KFBB_PlayerPawn_BP.KFBB_PlayerPawn_BP'"""
+Orc_Lineman,Orc,Lineman,50000,2,3,3,9,2,2,2,1,"""Blueprint'/Game/KFBB/Player/KFBB_PlayerPawn_BP.KFBB_PlayerPawn_BP'"""
+Orc_Goblin,Orc,Goblin,40000,3,2,3,7,2,2,2,1,"""Blueprint'/Game/KFBB/Player/KFBB_PlayerPawn_BP.KFBB_PlayerPawn_BP'"""
+Orc_Thrower,Orc,Thrower,70000,2,3,3,8,2,2,2,1,"""Blueprint'/Game/KFBB/Player/KFBB_PlayerPawn_BP.KFBB_PlayerPawn_BP'"""
+Orc_BlackOrc,Orc,BlackOrc,80000,2,4,2,9,2,2,2,1,"""Blueprint'/Game/KFBB/Player/KFBB_PlayerPawn_BP.KFBB_PlayerPawn_BP'"""
+Orc_Blitzer,Orc,Blitzer,90000,6,3,3,9,2,2,2,1,"""Blueprint'/Game/KFBB/Player/KFBB_PlayerPawn_BP.KFBB_PlayerPawn_BP'"""
+Orc_Troll,Orc,Troll,110000,2,5,1,9,2,2,2,1,"""Blueprint'/Game/KFBB/Player/KFBB_PlayerPawn_BP.KFBB_PlayerPawn_BP'"""
