@@ -135,6 +135,16 @@ void UKFBB_FieldTile::DrawDebugTile(FVector offset) const
 	}
 }
 
+void UKFBB_FieldTile::DrawDebugTileOverride(FVector offset, float scale, FColor c) const
+{
+	if (Field == nullptr)
+		return;
+
+	auto MyWorld = Field->GetWorld();
+
+	DrawDebugBox(MyWorld, TileLocation + offset, FVector(Field->TileSize, Field->TileSize, 0) * scale, c);
+}
+
 FColor UKFBB_FieldTile::GetDebugColor() const
 {
 	FColor color = FColor::Green;

@@ -37,6 +37,7 @@ public:
 	void SpawnBallOnTile();
 	void SpawnBallOnTile(int x, int y);
 
+	class AKFBB_PlayerPawn* GetSelectedPlayer() const;
 
 	UFUNCTION(BlueprintCallable)
 	void ClearTileSelection();

@@ -29,6 +29,17 @@ public:
 	UPROPERTY(BlueprintReadOnly)
 	bool bScrimmageLine;
 
+	UPROPERTY()
+	bool bPathVisited;
+	UPROPERTY()
+	float pathHeuristicCost;
+	UPROPERTY()
+	float pathGlobalCost;
+	UPROPERTY()
+	float pathTotalCost;
+	UPROPERTY()
+	UKFBB_FieldTile* pathPrevTile;
+
 	UPROPERTY(BlueprintReadOnly)
 	class AKFBB_Field* Field;
 	UPROPERTY(BlueprintReadOnly)
@@ -60,5 +71,6 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void DrawDebugTile() const;
 	void DrawDebugTile(FVector offset) const;
+	void DrawDebugTileOverride(FVector offset, float scale, FColor c) const;
 	FColor GetDebugColor() const;
 };

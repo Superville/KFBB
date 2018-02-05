@@ -4,6 +4,10 @@ Pitch
 Short session, mobile app
 
 Todo:
+	Movement
+		Path along 8 directions - pathing done
+		Move along path segments
+
 	Handle player collisions
 		Show player crouching when knocked down
 		Knock down a random player

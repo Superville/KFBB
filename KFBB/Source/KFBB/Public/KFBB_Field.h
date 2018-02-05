@@ -7,17 +7,17 @@
 #include "KFBB_Field.generated.h"
 
 USTRUCT()
-struct FScatterDir
+struct FTileDir
 {
 	GENERATED_BODY()
 
-		FScatterDir() : x(0), y(0) {}
-	FScatterDir(short _x, short _y) : x(_x), y(_y) {}
+	FTileDir() : x(0), y(0) {}
+	FTileDir(short _x, short _y) : x(_x), y(_y) {}
 	short x;
 	short y;
 
-	FORCEINLINE bool operator==(const FScatterDir& V) const { return x == V.x && y == V.y; }
-	FORCEINLINE bool operator!=(const FScatterDir& V) const { return x != V.x || y != V.y; }
+	FORCEINLINE bool operator==(const FTileDir& V) const { return x == V.x && y == V.y; }
+	FORCEINLINE bool operator!=(const FTileDir& V) const { return x != V.x || y != V.y; }
 };
 
 UCLASS()
@@ -25,12 +25,8 @@ class KFBB_API AKFBB_Field : public AActor
 {
 	GENERATED_BODY()
 
-		AKFBB_Field(const FObjectInitializer& ObjectInitializer);
+	AKFBB_Field(const FObjectInitializer& ObjectInitializer);
 	virtual void OnConstruction(const FTransform& Transform) override;
-
-
-	TArray<class UKFBB_FieldTile*> Tiles;
-
 
 public:
 	// Sets default values for this actor's properties
@@ -47,6 +43,8 @@ public:
 
 	// Searches the map for a KFBB_Field actor and assigns it to the pointer ref
 	static bool AssignFieldActor(AActor* src, AKFBB_Field*& ptrField);
+
+	TArray<class UKFBB_FieldTile*> Tiles;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	int Length;
@@ -91,9 +89,9 @@ public:
 	UFUNCTION(BlueprintPure)
 	FVector GetFieldTileLocation(int x, int y) const;
 
-	TArray<struct FScatterDir> ScatterDirections;
-	FScatterDir GetScatterDirection(short centerX = 0, short centerY = 0, int cone = 4);
-	class UKFBB_FieldTile* GetAdjacentTile(class UKFBB_FieldTile* tile, FScatterDir dir);
+	TArray<struct FTileDir> TileDirections;
+	FTileDir GetScatterDirection(short centerX = 0, short centerY = 0, int cone = 4);
+	class UKFBB_FieldTile* GetAdjacentTile(class UKFBB_FieldTile* tile, FTileDir dir);
 };
 
 

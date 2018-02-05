@@ -87,6 +87,7 @@ class KFBB_API AKFBB_PlayerPawn : public ACharacter
 
 	void DrawDebugCurrentTile() const;
 	void DrawDebugStatus() const;
+	void DrawDebugPath() const;
 	FColor GetDebugColor() const;
 	FString GetStatusString() const;
 	
@@ -191,6 +192,10 @@ public:
 	int32 AG;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = PlayerData)
 	int32 AV;
+
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = PlayerSettings)
+	bool bRunThroughPlayers;
 
 	void LoadAttributesFromPlayerData(const FKFBB_PlayerData& data);
 	UFUNCTION(BlueprintCallable)

@@ -58,6 +58,7 @@ void AKFBB_PlayerPawn::Tick(float DeltaTime)
 	//debug
 	DrawDebugCurrentTile();
 	DrawDebugStatus();
+	DrawDebugPath();
 }
 
 // Called to bind functionality to input
@@ -154,9 +155,10 @@ bool AKFBB_PlayerPawn::MoveToTileLocation(UKFBB_FieldTile* Tile)
 
 bool AKFBB_PlayerPawn::NotifyCommandGiven(UKFBB_FieldTile* DestinationTile)
 {
-	if (CanAcceptCommand() && Controller != nullptr)
+	AKFBB_AIController* C = Cast<AKFBB_AIController>(Controller);
+	if (CanAcceptCommand() && C != nullptr)
 	{
-		if (MoveToTileLocation(DestinationTile))
+		if(MoveToTileLocation(C->GetNextTileOnPath()))
 		{
 			SetStatus(EKFBB_PlayerState::Moving);
 			return true;
@@ -181,7 +183,23 @@ void AKFBB_PlayerPawn::NotifyReachedDestination()
 {
 	if( Status == EKFBB_PlayerState::Moving)
 	{
-		SetStatus(EKFBB_PlayerState::Exhausted);
+		bool bKeepMoving = false;
+
+		AKFBB_AIController* C = Cast<AKFBB_AIController>(Controller);
+		if (C != nullptr)
+		{
+			auto nextTile = C->GetNextTileOnPath();
+			if (nextTile != nullptr)
+			{
+				bKeepMoving = true;
+				MoveToTileLocation(nextTile);
+			}
+		}
+
+		if (!bKeepMoving)
+		{
+			SetStatus(EKFBB_PlayerState::Exhausted);
+		}
 	}	
 }
 
@@ -323,6 +341,15 @@ void AKFBB_PlayerPawn::FumbleBall()
 //	UGameplayStatics::SuggestProjectileVelocity(MyWorld,)
 
 	b->FumbleBall(destTile);
+}
+
+void AKFBB_PlayerPawn::DrawDebugPath() const
+{
+	AKFBB_AIController* C = Cast<AKFBB_AIController>(Controller);
+	if (C != nullptr)
+	{
+		C->DrawDebugPath();
+	}
 }
 
 void AKFBB_PlayerPawn::DrawDebugCurrentTile() const

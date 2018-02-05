@@ -5,6 +5,7 @@
 #include "KFBB_FieldTile.h"
 
 #include "KFBB_PlayerPawn.h"
+#include "KFBB_AIController.h"
 
 #include "AIController.h"
 #include "KFBB_Ball.h"
@@ -26,13 +27,11 @@ void AKFBB_CoachPC::Tick(float DeltaTime)
 
 	if (SelectedTile != nullptr)
 	{
-		FColor c = FColor::White;
-		DrawDebugBox(GetWorld(), SelectedTile->TileLocation + FVector(0, 0, 2), FVector(Field->TileSize, Field->TileSize, 0) * 0.45f, c, false);
+		SelectedTile->DrawDebugTileOverride(FVector(0, 0, 2), 0.45f, FColor::White);
 	}
 	if (DestinationTile != nullptr)
 	{
-		FColor c = FColor::Purple;
-		DrawDebugBox(GetWorld(), DestinationTile->TileLocation + FVector(0, 0, 2), FVector(Field->TileSize, Field->TileSize, 0) * 0.45f, c, false);
+		DestinationTile->DrawDebugTileOverride(FVector(0, 0, 2), 0.45f, FColor::Purple);
 	}
 
 	if (SelectedTile != nullptr && 
@@ -40,8 +39,7 @@ void AKFBB_CoachPC::Tick(float DeltaTime)
 		MouseTile != nullptr && 
 		MouseTile != SelectedTile)
 	{
-		FColor c = FColor::Yellow;
-		DrawDebugBox(GetWorld(), MouseTile->TileLocation + FVector(0, 0, 2), FVector(Field->TileSize, Field->TileSize, 0) * 0.45f, c, false);
+		MouseTile->DrawDebugTileOverride(FVector(0, 0, 2), 0.45f, FColor::Yellow);
 	}
 }
 
@@ -57,6 +55,15 @@ UKFBB_FieldTile* AKFBB_CoachPC::GetTileUnderMouse()
 		{
 			return Cast<UKFBB_FieldTile>(Hit.GetComponent());
 		}
+	}
+	return nullptr;
+}
+
+AKFBB_PlayerPawn* AKFBB_CoachPC::GetSelectedPlayer() const
+{
+	if (SelectedTile != nullptr)
+	{
+		return SelectedTile->GetPlayer();
 	}
 	return nullptr;
 }
@@ -92,9 +99,14 @@ void AKFBB_CoachPC::PlayerTouchScreen()
 void AKFBB_CoachPC::SetDestinationTile(UKFBB_FieldTile* t)
 {
 	DestinationTile = t;
-	if (DestinationTile != nullptr && SelectedTile != nullptr && SelectedTile->HasPlayer())
+	auto P = GetSelectedPlayer();
+	if (DestinationTile != nullptr && P != nullptr)
 	{
-		TryMovePawnToDestination();
+		AKFBB_AIController* C = Cast<AKFBB_AIController>(P->Controller);
+		if (C != nullptr && C->GeneratePathToTile(t))
+		{
+			TryMovePawnToDestination();
+		}
 	}
 }
 

@@ -59,14 +59,14 @@ void AKFBB_Field::BeginPlay()
 {
 	Super::BeginPlay();
 
-	ScatterDirections.Add(FScatterDir(1, 0));
-	ScatterDirections.Add(FScatterDir(1, 1));
-	ScatterDirections.Add(FScatterDir(0, 1));
-	ScatterDirections.Add(FScatterDir(-1, 1));
-	ScatterDirections.Add(FScatterDir(-1, 0));
-	ScatterDirections.Add(FScatterDir(-1, -1));
-	ScatterDirections.Add(FScatterDir(0, -1));
-	ScatterDirections.Add(FScatterDir(1, -1));
+	TileDirections.Add(FTileDir(1, 0));
+	TileDirections.Add(FTileDir(1, 1));
+	TileDirections.Add(FTileDir(0, 1));
+	TileDirections.Add(FTileDir(-1, 1));
+	TileDirections.Add(FTileDir(-1, 0));
+	TileDirections.Add(FTileDir(-1, -1));
+	TileDirections.Add(FTileDir(0, -1));
+	TileDirections.Add(FTileDir(1, -1));
 
 	auto TileList = GetComponentsByClass(UKFBB_FieldTile::StaticClass());
 	for (int i = 0; i < TileList.Num(); ++i)
@@ -114,7 +114,7 @@ void AKFBB_Field::OnConstruction(const FTransform& Transform)
 	}
 }
 
-UKFBB_FieldTile* AKFBB_Field::GetAdjacentTile(UKFBB_FieldTile* tile, FScatterDir dir)
+UKFBB_FieldTile* AKFBB_Field::GetAdjacentTile(UKFBB_FieldTile* tile, FTileDir dir)
 {
 	int idx = GetIndexByXY(tile->x + dir.x, tile->y + dir.y);
 	if (idx < 0) { return nullptr; }
@@ -164,16 +164,16 @@ FVector AKFBB_Field::GetFieldTileLocation(int x, int y) const
 	return FVector::ZeroVector;
 }
 
-FScatterDir AKFBB_Field::GetScatterDirection(short centerX, short centerY, int cone)
+FTileDir AKFBB_Field::GetScatterDirection(short centerX, short centerY, int cone)
 {
-	FScatterDir c(centerX, centerY);
-	int idx = FMath::Max(ScatterDirections.Find(c), 0);
+	FTileDir c(centerX, centerY);
+	int idx = FMath::Max(TileDirections.Find(c), 0);
 	int offset = FMath::RandRange(FMath::Max(-3, -cone), cone);
 	idx += offset;
-	while (idx < 0) { idx += ScatterDirections.Num(); }
-	while (idx >= ScatterDirections.Num()) { idx -= ScatterDirections.Num(); }
+	while (idx < 0) { idx += TileDirections.Num(); }
+	while (idx >= TileDirections.Num()) { idx -= TileDirections.Num(); }
 
-	return ScatterDirections[idx];
+	return TileDirections[idx];
 }
 
 
