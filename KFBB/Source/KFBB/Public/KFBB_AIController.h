@@ -17,6 +17,8 @@ class KFBB_API AKFBB_AIController : public AAIController
 	TArray<class UKFBB_FieldTile*> PathToDestTile;
 
 public:
+	AKFBB_AIController(const FObjectInitializer& ObjectInitializer);
+
 	class AKFBB_PlayerPawn* MyPlayerPawn;
 
 	virtual void SetPawn(APawn* InPawn) override;

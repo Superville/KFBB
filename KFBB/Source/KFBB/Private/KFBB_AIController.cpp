@@ -4,6 +4,12 @@
 #include "KFBB_PlayerPawn.h"
 #include "KFBB_Field.h"
 #include "KFBB_FieldTile.h"
+#include "Navigation/GridPathFollowingComponent.h"
+
+AKFBB_AIController::AKFBB_AIController(const FObjectInitializer& ObjectInitializer)
+	: Super(ObjectInitializer.SetDefaultSubobjectClass<UGridPathFollowingComponent>(TEXT("PathFollowingComponent")))
+{
+}
 
 void AKFBB_AIController::SetPawn(APawn* InPawn)
 {
