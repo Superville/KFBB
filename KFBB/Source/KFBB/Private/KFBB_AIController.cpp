@@ -1,6 +1,11 @@
 // Fill out your copyright notice in the Description page of Project Settings.
-
 #include "KFBB_AIController.h"
+
+// Engine Includes
+#include "BehaviorTree/BlackboardComponent.h"
+#include "DrawDebugHelpers.h"
+
+// KFBB Includes
 #include "KFBB_PlayerPawn.h"
 #include "KFBB_Field.h"
 #include "KFBB_FieldTile.h"
@@ -176,10 +181,61 @@ UKFBB_FieldTile* AKFBB_AIController::GetNextTileOnPath() const
 	return nullptr;
 }
 
+bool AKFBB_AIController::SetBlackboardTilePath()
+{
+	UBlackboardComponent* BB = GetBlackboardComponent();
+	if (BB != nullptr)
+	{
+		BB->SetValueAsBool(PathSetName, true);
+		UpdateTilePath();
+		return true;
+	}
+
+	return false;
+}
+
+void AKFBB_AIController::ClearBlackboardTilePath()
+{
+	UBlackboardComponent* BB = GetBlackboardComponent();
+	if (BB != nullptr)
+	{
+		BB->ClearValue(PathSetName);
+		BB->ClearValue(TilePathName);
+	}
+}
+
+void AKFBB_AIController::UpdateTilePath()
+{
+	auto tile = GetNextTileOnPath();
+	if (tile != nullptr)
+	{
+		UBlackboardComponent* BB = GetBlackboardComponent();
+		if (BB != nullptr)
+		{
+			//test
+//			UE_LOG(LogTemp, Error, TEXT("Set TilePath %s"), *tile->TileLocation.ToString());
+			FVector destLocation = tile->TileLocation;
+			destLocation.Z = GetPawn()->GetActorLocation().Z;
+
+			BB->SetValueAsVector(TilePathName, destLocation);
+		}
+	}
+	else
+	{
+		ClearBlackboardTilePath();
+	}
+}
+
 void AKFBB_AIController::DrawDebugPath() const
 {
 	for (int i = 0; i < PathToDestTile.Num(); i++)
 	{
 		PathToDestTile[i]->DrawDebugTileOverride(FVector(0, 0, 2), 0.25f, FColor::Emerald);
+	}
+
+	const UBlackboardComponent* BB = GetBlackboardComponent();
+	if (BB != nullptr)
+	{
+		DrawDebugLine(GetWorld(), GetPawn()->GetActorLocation(), BB->GetValueAsVector(TilePathName), FColor::Red);
 	}
 }

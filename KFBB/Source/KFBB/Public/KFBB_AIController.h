@@ -6,6 +6,10 @@
 #include "AIController.h"
 #include "KFBB_AIController.generated.h"
 
+class AKFBB_PlayerPawn;
+class UKFBB_FieldTile;
+class AKFBB_Field;
+
 /**
  * 
  */
@@ -14,12 +18,12 @@ class KFBB_API AKFBB_AIController : public AAIController
 {
 	GENERATED_BODY()
 
-	TArray<class UKFBB_FieldTile*> PathToDestTile;
+	TArray<UKFBB_FieldTile*> PathToDestTile;
 
 public:
 	AKFBB_AIController(const FObjectInitializer& ObjectInitializer);
 
-	class AKFBB_PlayerPawn* MyPlayerPawn;
+	AKFBB_PlayerPawn* MyPlayerPawn;
 
 	virtual void SetPawn(APawn* InPawn) override;
 
@@ -27,14 +31,28 @@ public:
 	virtual void OnMoveCompleted(FAIRequestID RequestID, const FPathFollowingResult& Result) override;
 	
 	UPROPERTY(BlueprintReadonly)
-	class UKFBB_FieldTile* DestinationTile;
+	UKFBB_FieldTile* DestinationTile;
 
-	class AKFBB_Field* GetField();
+	AKFBB_Field* GetField();
 	void ClearPathing();
-	bool GeneratePathToTile(class UKFBB_FieldTile* DestTile);
-	float GetPathGlobalCost(class UKFBB_FieldTile* curr, class UKFBB_FieldTile* next) const;
-	float GetPathHeuristicCost(class UKFBB_FieldTile* dest, class UKFBB_FieldTile* next) const;
-	class UKFBB_FieldTile* GetNextTileOnPath() const;
+	bool GeneratePathToTile(UKFBB_FieldTile* DestTile);
+	float GetPathGlobalCost(UKFBB_FieldTile* curr, UKFBB_FieldTile* next) const;
+	float GetPathHeuristicCost(UKFBB_FieldTile* dest, UKFBB_FieldTile* next) const;
+
+	
+	bool SetBlackboardTilePath();
+	void ClearBlackboardTilePath();
+
+	FName PathSetName = FName("bPathSet");
+	FName TilePathName = FName("TilePath");
+	
+	UKFBB_FieldTile* GetNextTileOnPath() const;
+	
+	UFUNCTION(BlueprintCallable, Category = "Pathing")
+	void UpdateTilePath();
+	
 	void DrawDebugPath() const;
+
+
 
 };

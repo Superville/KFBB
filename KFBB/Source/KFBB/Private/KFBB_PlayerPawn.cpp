@@ -1,13 +1,17 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 #include "KFBB_PlayerPawn.h"
+
+// Engine Includes
+#include "DrawDebugHelpers.h"
+
+// KFBB Includes
 #include "KFBB_AIController.h"
 #include "KFBB_CoachPC.h"
 #include "KFBB_Field.h"
 #include "KFBB_FieldTile.h"
 #include "KFBB_Ball.h"
 #include "KFBB.h"
-#include "DrawDebugHelpers.h"
 #include "KFBB_BallMovementComponent.h"
 
 // Sets default values
@@ -158,7 +162,8 @@ bool AKFBB_PlayerPawn::NotifyCommandGiven(UKFBB_FieldTile* DestinationTile)
 	AKFBB_AIController* C = Cast<AKFBB_AIController>(Controller);
 	if (CanAcceptCommand() && C != nullptr)
 	{
-		if(MoveToTileLocation(C->GetNextTileOnPath()))
+		//if (MoveToTileLocation(C->GetNextTileOnPath()))
+		if(C->SetBlackboardTilePath())
 		{
 			SetStatus(EKFBB_PlayerState::Moving);
 			return true;
@@ -192,7 +197,7 @@ void AKFBB_PlayerPawn::NotifyReachedDestination()
 			if (nextTile != nullptr)
 			{
 				bKeepMoving = true;
-				MoveToTileLocation(nextTile);
+//test				MoveToTileLocation(nextTile);
 			}
 		}
 
