@@ -18,7 +18,7 @@ class KFBB_API AKFBB_AIController : public AAIController
 {
 	GENERATED_BODY()
 
-	TArray<UKFBB_FieldTile*> PathToDestTile;
+	
 
 public:
 	AKFBB_AIController(const FObjectInitializer& ObjectInitializer);
@@ -27,32 +27,26 @@ public:
 
 	virtual void SetPawn(APawn* InPawn) override;
 
-	/** Called on completing current movement request */
-	virtual void OnMoveCompleted(FAIRequestID RequestID, const FPathFollowingResult& Result) override;
+	AKFBB_Field* GetField() const;
 	
 	UPROPERTY(BlueprintReadonly)
+	bool bAbortGridMove = false;
+	UPROPERTY(BlueprintReadonly)
 	UKFBB_FieldTile* DestinationTile;
+	UPROPERTY(BlueprintReadonly)
+	TArray<UKFBB_FieldTile*> PathToDestTile;
 
-	AKFBB_Field* GetField();
+	UFUNCTION()
+	virtual bool SetDestinationTile(UKFBB_FieldTile* DestTile);
+
+	
+
 	void ClearPathing();
 	bool GeneratePathToTile(UKFBB_FieldTile* DestTile);
 	float GetPathGlobalCost(UKFBB_FieldTile* curr, UKFBB_FieldTile* next) const;
 	float GetPathHeuristicCost(UKFBB_FieldTile* dest, UKFBB_FieldTile* next) const;
 
-	
-	bool SetBlackboardTilePath();
-	void ClearBlackboardTilePath();
-
 	FName PathSetName = FName("bPathSet");
-	FName TilePathName = FName("TilePath");
-	
-	UKFBB_FieldTile* GetNextTileOnPath() const;
-	
-	UFUNCTION(BlueprintCallable, Category = "Pathing")
-	void UpdateTilePath();
 	
 	void DrawDebugPath() const;
-
-
-
 };

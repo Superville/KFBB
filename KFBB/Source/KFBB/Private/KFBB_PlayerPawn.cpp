@@ -45,20 +45,7 @@ void AKFBB_PlayerPawn::Tick(float DeltaTime)
 			OnCooldownTimerExpired();
 		}
 	}
-
-	if (CurrentTile != nullptr && CurrentTile->HasBall())
-	{
-		auto ball = CurrentTile->GetBall();
-		if (CanPickupBall(ball) && TryPickupBall())
-		{
-			ClaimBall();
-		}
-		else
-		{
-			FumbleBall();
-		}
-	}
-
+	
 	//debug
 	DrawDebugCurrentTile();
 	DrawDebugStatus();
@@ -125,56 +112,12 @@ bool AKFBB_PlayerPawn::IsPlayerOnCooldown()
 
 bool AKFBB_PlayerPawn::CanAcceptCommand()
 {
-	AAIController* ai = Cast<AAIController>(Controller);
-	if(ai != nullptr && ai->GetMoveStatus() != EPathFollowingStatus::Idle)
-	{
-		return false;
-	}
-	
-	if( IsPlayerOnCooldown())
+	if (IsPlayerOnCooldown())
 	{
 		return false;
 	}
 
 	return true;
-}
-
-bool AKFBB_PlayerPawn::MoveToTileLocation(UKFBB_FieldTile* Tile)
-{
-	if (Tile == nullptr)
-		return false;
-
-	AAIController* ai = Cast<AAIController>(Controller);
-	if (ai != nullptr)
-	{
-		FVector Dest = Tile->TileLocation;
-		auto result = ai->MoveToLocation(Dest, -1.f, false, false, false, false);
-		if (result == EPathFollowingRequestResult::RequestSuccessful)
-		{
-			return true;
-		}
-	}
-	return false;
-}
-
-bool AKFBB_PlayerPawn::NotifyCommandGiven(UKFBB_FieldTile* DestinationTile)
-{
-	AKFBB_AIController* C = Cast<AKFBB_AIController>(Controller);
-	if (CanAcceptCommand() && C != nullptr)
-	{
-		//if (MoveToTileLocation(C->GetNextTileOnPath()))
-		if(C->SetBlackboardTilePath())
-		{
-			SetStatus(EKFBB_PlayerState::Moving);
-			return true;
-		}
-		else
-		{
-			NotifyCommandFailed();
-			return false;
-		}
-	}
-	return false;
 }
 
 void AKFBB_PlayerPawn::NotifyCommandFailed()
@@ -184,28 +127,37 @@ void AKFBB_PlayerPawn::NotifyCommandFailed()
 	DrawDebugBox(MyWorld, GetActorLocation(), FVector(20, 20, 20), color, false, 1.f);
 }
 
-void AKFBB_PlayerPawn::NotifyReachedDestination()
+void AKFBB_PlayerPawn::NotifyReachedGrid()
 {
-	if( Status == EKFBB_PlayerState::Moving)
+	if (!CurrentTile) return;
+	auto BallOnTile = CurrentTile->GetBall();
+	if (!BallOnTile) { return; }
+	auto AI = Cast<AKFBB_AIController>(GetController());
+	if (!AI) { return; }
+
+	if (CanPickupBall(BallOnTile) && TryPickupBall())
 	{
-		bool bKeepMoving = false;
+		ClaimBall();
+	}
+	else
+	{
+		FumbleBall();
+	}
 
-		AKFBB_AIController* C = Cast<AKFBB_AIController>(Controller);
-		if (C != nullptr)
-		{
-			auto nextTile = C->GetNextTileOnPath();
-			if (nextTile != nullptr)
-			{
-				bKeepMoving = true;
-//test				MoveToTileLocation(nextTile);
-			}
-		}
+	AI->SetDestinationTile(nullptr);
+}
 
-		if (!bKeepMoving)
-		{
-			SetStatus(EKFBB_PlayerState::Exhausted);
-		}
-	}	
+void AKFBB_PlayerPawn::NotifyReachedDestinationGrid()
+{
+	auto AI = Cast<AKFBB_AIController>(GetController());
+	if (!AI) { return; }
+
+	if (Status == EKFBB_PlayerState::Moving)
+	{
+		SetStatus(EKFBB_PlayerState::Exhausted);
+	}
+
+	AI->SetDestinationTile(nullptr);
 }
 
 void AKFBB_PlayerPawn::NotifyHit(class UPrimitiveComponent* MyComp, AActor* Other, class UPrimitiveComponent* OtherComp, bool bSelfMoved, FVector HitLocation, FVector HitNormal, FVector NormalImpulse, const FHitResult& Hit)
@@ -225,7 +177,7 @@ void AKFBB_PlayerPawn::SetStatus(EKFBB_PlayerState::Type newStatus)
 	Status = newStatus;
 	TestStatus = Status;
 
-	AAIController* ai = Cast<AAIController>(Controller);
+	auto AI = Cast<AKFBB_AIController>(Controller);
 	
 	switch (Status)
 	{
@@ -235,11 +187,7 @@ void AKFBB_PlayerPawn::SetStatus(EKFBB_PlayerState::Type newStatus)
 		SetCooldownTimer(ExhaustedCooldownTime);
 		break;
 	case EKFBB_PlayerState::KnockedDown:
-		ai->StopMovement();
-		if (CurrentTile != nullptr)
-		{
-			MoveToTileLocation(CurrentTile);
-		}
+		AI->SetDestinationTile(nullptr);
 		SetCooldownTimer(KnockedDownTime);
 		break;
 	case EKFBB_PlayerState::Stunned:
@@ -251,11 +199,7 @@ void AKFBB_PlayerPawn::SetStatus(EKFBB_PlayerState::Type newStatus)
 	case EKFBB_PlayerState::Ready:
 		break;
 	case EKFBB_PlayerState::GrabBall:
-		ai->StopMovement();
-		if (CurrentTile != nullptr)
-		{
-			MoveToTileLocation(CurrentTile);
-		}
+		AI->SetDestinationTile(nullptr);
 		break;
 	}
 	
@@ -288,7 +232,7 @@ bool AKFBB_PlayerPawn::TryPickupBall() const
 	int chance = 4;
 
 	//test
-	UE_LOG(LogTemp, Warning, TEXT("%s Try Pickup Ball Chance %d Roll %d - %s"), *GetName(), chance, roll, (roll >= chance) ? TEXT("Success!") : TEXT("Fumble!"));
+	UE_LOG(LogTemp, Warning, TEXT("%s Try Pickup BallOnTile Chance %d Roll %d - %s"), *GetName(), chance, roll, (roll >= chance) ? TEXT("Success!") : TEXT("Fumble!"));
 	
 	return (roll >= chance);
 }

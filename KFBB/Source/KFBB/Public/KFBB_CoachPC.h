@@ -17,7 +17,6 @@ class KFBB_API AKFBB_CoachPC : public APlayerController
 	void DrawDebugTouchedTile(UKFBB_FieldTile* t);
 
 	void SetDestinationTile(UKFBB_FieldTile* t);
-	bool TryMovePawnToDestination();
 
 public:
 	virtual void BeginPlay() override;

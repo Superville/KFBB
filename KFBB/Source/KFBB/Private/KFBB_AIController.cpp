@@ -23,15 +23,7 @@ void AKFBB_AIController::SetPawn(APawn* InPawn)
 	MyPlayerPawn = Cast<AKFBB_PlayerPawn>(InPawn);
 }
 
-void AKFBB_AIController::OnMoveCompleted(FAIRequestID RequestID, const FPathFollowingResult& Result)
-{
-	if (MyPlayerPawn != nullptr)
-	{
-		MyPlayerPawn->NotifyReachedDestination();
-	}
-}
-
-AKFBB_Field* AKFBB_AIController::GetField()
+AKFBB_Field* AKFBB_AIController::GetField() const
 {
 	if (MyPlayerPawn != nullptr)
 	{
@@ -72,6 +64,31 @@ float AKFBB_AIController::GetPathHeuristicCost(class UKFBB_FieldTile* dest, clas
 		cost += 10000;
 	}
 	return cost;
+}
+
+bool AKFBB_AIController::SetDestinationTile(UKFBB_FieldTile* DestTile)
+{
+	auto BB = GetBlackboardComponent();
+	if (!BB) { return false; }
+
+	DestinationTile = DestTile;
+	PathToDestTile.Empty();
+
+	if (!DestinationTile)
+	{
+		BB->ClearValue(PathSetName);
+		bAbortGridMove = true;
+		return true;
+	}
+
+	bool bSuccess = GeneratePathToTile(DestinationTile);
+	if (bSuccess)
+	{
+		BB->SetValueAsBool(PathSetName, true);
+	}
+
+	bAbortGridMove = false;
+	return bSuccess;
 }
 
 bool AKFBB_AIController::GeneratePathToTile(class UKFBB_FieldTile* DestTile)
@@ -166,76 +183,10 @@ bool AKFBB_AIController::GeneratePathToTile(class UKFBB_FieldTile* DestTile)
 	return false;
 }
 
-UKFBB_FieldTile* AKFBB_AIController::GetNextTileOnPath() const
-{
-	if (MyPlayerPawn != nullptr)
-	{
-		for (int i = 0; i < PathToDestTile.Num(); i++)
-		{
-			if (PathToDestTile[i] == MyPlayerPawn->CurrentTile)
-			{
-				return ((i + 1) < PathToDestTile.Num()) ? PathToDestTile[i + 1] : nullptr;
-			}
-		}
-	}
-	return nullptr;
-}
-
-bool AKFBB_AIController::SetBlackboardTilePath()
-{
-	UBlackboardComponent* BB = GetBlackboardComponent();
-	if (BB != nullptr)
-	{
-		BB->SetValueAsBool(PathSetName, true);
-		UpdateTilePath();
-		return true;
-	}
-
-	return false;
-}
-
-void AKFBB_AIController::ClearBlackboardTilePath()
-{
-	UBlackboardComponent* BB = GetBlackboardComponent();
-	if (BB != nullptr)
-	{
-		BB->ClearValue(PathSetName);
-		BB->ClearValue(TilePathName);
-	}
-}
-
-void AKFBB_AIController::UpdateTilePath()
-{
-	auto tile = GetNextTileOnPath();
-	if (tile != nullptr)
-	{
-		UBlackboardComponent* BB = GetBlackboardComponent();
-		if (BB != nullptr)
-		{
-			//test
-//			UE_LOG(LogTemp, Error, TEXT("Set TilePath %s"), *tile->TileLocation.ToString());
-			FVector destLocation = tile->TileLocation;
-			destLocation.Z = GetPawn()->GetActorLocation().Z;
-
-			BB->SetValueAsVector(TilePathName, destLocation);
-		}
-	}
-	else
-	{
-		ClearBlackboardTilePath();
-	}
-}
-
 void AKFBB_AIController::DrawDebugPath() const
 {
 	for (int i = 0; i < PathToDestTile.Num(); i++)
 	{
 		PathToDestTile[i]->DrawDebugTileOverride(FVector(0, 0, 2), 0.25f, FColor::Emerald);
-	}
-
-	const UBlackboardComponent* BB = GetBlackboardComponent();
-	if (BB != nullptr)
-	{
-		DrawDebugLine(GetWorld(), GetPawn()->GetActorLocation(), BB->GetValueAsVector(TilePathName), FColor::Red);
 	}
 }

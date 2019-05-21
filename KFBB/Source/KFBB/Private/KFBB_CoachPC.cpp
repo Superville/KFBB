@@ -99,26 +99,23 @@ void AKFBB_CoachPC::PlayerTouchScreen()
 void AKFBB_CoachPC::SetDestinationTile(UKFBB_FieldTile* t)
 {
 	DestinationTile = t;
+	if (!DestinationTile) { return; }
+
 	auto P = GetSelectedPlayer();
-	if (DestinationTile != nullptr && P != nullptr)
-	{
-		AKFBB_AIController* C = Cast<AKFBB_AIController>(P->Controller);
-		if (C != nullptr && C->GeneratePathToTile(t))
-		{
-			TryMovePawnToDestination();
-		}
-	}
-}
+	if (!P) { return; }
 
-bool AKFBB_CoachPC::TryMovePawnToDestination()
-{
-	AKFBB_PlayerPawn* p = SelectedTile->GetPlayer();
-	if (p != nullptr )
+	auto AI = Cast<AKFBB_AIController>(P->Controller);
+	if (!AI) { return; }
+	
+	if (P->CanAcceptCommand() &&
+	    AI->SetDestinationTile(DestinationTile))
 	{
-		return p->NotifyCommandGiven(DestinationTile);
+		P->SetStatus(EKFBB_PlayerState::Moving);
 	}
-
-	return false;
+	else
+	{
+		P->NotifyCommandFailed();
+	}
 }
 
 void AKFBB_CoachPC::SpawnPlayerOnTile()

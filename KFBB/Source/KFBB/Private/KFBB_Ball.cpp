@@ -80,12 +80,6 @@ void AKFBB_Ball::RegisterWithField()
 
 void AKFBB_Ball::RegisterWithTile(class UKFBB_FieldTile* Tile)
 {
-	//test
-	if (Tile == nullptr)
-	{
-		int i = 0;
-	}
-
 	if (CurrentTile != Tile)
 	{
 		if (CurrentTile != nullptr) { CurrentTile->UnRegisterActor(this); }

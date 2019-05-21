@@ -118,15 +118,16 @@ public:
 	float CooldownTimer;
 
 	UFUNCTION(BlueprintCallable)
-	bool IsPlayerOnCooldown();
+	virtual bool IsPlayerOnCooldown();
 
-	UFUNCTION(BlueprintCallable)
-	bool CanAcceptCommand();
+	UFUNCTION(BlueprintCallable, Category = "Grid Pathing")
+	virtual bool CanAcceptCommand();
+	virtual void NotifyCommandFailed();
 
-	bool MoveToTileLocation(UKFBB_FieldTile* Tile);
-	bool NotifyCommandGiven(UKFBB_FieldTile* DestinationTile);
-	void NotifyCommandFailed();
-	void NotifyReachedDestination();	
+	UFUNCTION(BlueprintCallable, Category = "Grid Pathing")
+	virtual void NotifyReachedGrid();
+	UFUNCTION(BlueprintCallable, Category = "Grid Pathing")
+	virtual void NotifyReachedDestinationGrid();
 
 	virtual void NotifyHit(class UPrimitiveComponent* MyComp, AActor* Other, class UPrimitiveComponent* OtherComp, bool bSelfMoved, FVector HitLocation, FVector HitNormal, FVector NormalImpulse, const FHitResult& Hit) override;
 
