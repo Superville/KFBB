@@ -45,6 +45,7 @@ public:
 	bool GeneratePathToTile(UKFBB_FieldTile* DestTile);
 	float GetPathGlobalCost(UKFBB_FieldTile* curr, UKFBB_FieldTile* next) const;
 	float GetPathHeuristicCost(UKFBB_FieldTile* dest, UKFBB_FieldTile* next) const;
+	bool CanMoveThruTile(UKFBB_FieldTile* tile) const;
 
 	FName PathSetName = FName("bPathSet");
 	

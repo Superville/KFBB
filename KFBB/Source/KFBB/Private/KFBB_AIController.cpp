@@ -51,19 +51,33 @@ void AKFBB_AIController::ClearPathing()
 	}
 }
 
-float AKFBB_AIController::GetPathGlobalCost(class UKFBB_FieldTile* curr, class UKFBB_FieldTile* next) const
+float AKFBB_AIController::GetPathGlobalCost(UKFBB_FieldTile* curr, UKFBB_FieldTile* next) const
 {
 	return curr->pathGlobalCost + (curr->TileLocation - next->TileLocation).SizeSquared2D();
 }
 
-float AKFBB_AIController::GetPathHeuristicCost(class UKFBB_FieldTile* dest, class UKFBB_FieldTile* next) const
+float AKFBB_AIController::GetPathHeuristicCost(UKFBB_FieldTile* dest, UKFBB_FieldTile* next) const
 {
 	float cost = (dest->TileLocation - next->TileLocation).SizeSquared2D();
-	if (!MyPlayerPawn->bRunThroughPlayers && next->HasPlayer()) // should check for enemy player
+	if (!CanMoveThruTile(next))
 	{
 		cost += 10000;
 	}
 	return cost;
+}
+
+bool AKFBB_AIController::CanMoveThruTile(UKFBB_FieldTile* tile) const
+{
+	if (tile != nullptr)
+	{
+		if (tile->HasPlayer() && !MyPlayerPawn->bRunThroughPlayers)
+		{
+			//todo should check for enemy player
+			return false;
+		}
+	}
+
+	return true;
 }
 
 bool AKFBB_AIController::SetDestinationTile(UKFBB_FieldTile* DestTile)
@@ -91,7 +105,7 @@ bool AKFBB_AIController::SetDestinationTile(UKFBB_FieldTile* DestTile)
 	return bSuccess;
 }
 
-bool AKFBB_AIController::GeneratePathToTile(class UKFBB_FieldTile* DestTile)
+bool AKFBB_AIController::GeneratePathToTile(UKFBB_FieldTile* DestTile)
 {
 	AKFBB_Field* Field = GetField();
 	if (Field == nullptr)

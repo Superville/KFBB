@@ -40,6 +40,11 @@ void AKFBB_PlayerPawn::Tick(float DeltaTime)
 	if(IsPlayerOnCooldown())
 	{
 		CooldownTimer -= DeltaTime;
+		if (CurrentTile != nullptr)
+		{
+			CurrentTile->DrawCooldownTimer(CooldownDuration, CooldownTimer, GetCooldownColor());
+		}
+
 		if (CooldownTimer <= 0.f)
 		{
 			OnCooldownTimerExpired();
@@ -48,7 +53,7 @@ void AKFBB_PlayerPawn::Tick(float DeltaTime)
 	
 	//debug
 	DrawDebugCurrentTile();
-	DrawDebugStatus();
+//	DrawDebugStatus();
 	DrawDebugPath();
 }
 
@@ -81,6 +86,12 @@ void AKFBB_PlayerPawn::RegisterWithTile(class UKFBB_FieldTile* Tile)
 	}
 }
 
+void AKFBB_PlayerPawn::SetCooldownTimer(float t) 
+{ 
+	CooldownDuration = t;
+	CooldownTimer = t; 
+}
+
 void AKFBB_PlayerPawn::ClearCooldownTimer() 
 { 
 	SetCooldownTimer(0.f); 
@@ -104,9 +115,39 @@ void AKFBB_PlayerPawn::OnCooldownTimerExpired()
 		SetStatus(EKFBB_PlayerState::Ready);
 	}
 }
+
 bool AKFBB_PlayerPawn::IsPlayerOnCooldown() 
 { 
 	return (CooldownTimer > 0.f); 
+}
+
+FColor AKFBB_PlayerPawn::GetCooldownColor() const
+{
+	switch (Status)
+	{
+	case EKFBB_PlayerState::GrabBall:
+		return FColor::White;
+		break;
+	case EKFBB_PlayerState::KnockedDown:
+		return FColor::Blue;
+		break;
+	case EKFBB_PlayerState::Stunned:
+		return FColor::Black;
+		break;
+	case EKFBB_PlayerState::StandingUp:
+		return FColor::Yellow;
+		break;
+	case EKFBB_PlayerState::Exhausted:
+		return FColor::Orange;
+		break;
+	case EKFBB_PlayerState::Moving:
+		return FColor::Green;
+		break;
+	default:
+		break;
+	}
+
+	return FColor::Transparent;
 }
 
 

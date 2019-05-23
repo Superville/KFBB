@@ -74,7 +74,7 @@ void AKFBB_Field::BeginPlay()
 		UKFBB_FieldTile* t = Cast<UKFBB_FieldTile>(TileList[i]);
 		if (t != nullptr)
 		{
-			Tiles.Insert(t, t->idx);
+			Tiles.Insert(t, t->TileIdx);
 		}
 	}
 }
@@ -116,7 +116,7 @@ void AKFBB_Field::OnConstruction(const FTransform& Transform)
 
 UKFBB_FieldTile* AKFBB_Field::GetAdjacentTile(UKFBB_FieldTile* tile, FTileDir dir)
 {
-	int idx = GetIndexByXY(tile->x + dir.x, tile->y + dir.y);
+	int idx = GetIndexByXY(tile->TileX + dir.x, tile->TileY + dir.y);
 	if (idx < 0) { return nullptr; }
 	return Tiles[idx];
 }

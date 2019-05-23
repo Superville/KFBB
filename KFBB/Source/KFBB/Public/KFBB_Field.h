@@ -53,6 +53,8 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	float TileSize;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	float TileHeight;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	int EndZoneSize;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	int WideOutSize;

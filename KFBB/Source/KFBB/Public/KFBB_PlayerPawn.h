@@ -81,9 +81,10 @@ class KFBB_API AKFBB_PlayerPawn : public ACharacter
 	void RegisterWithTile(class UKFBB_FieldTile* Tile);
 
 
-	void SetCooldownTimer(float t) { CooldownTimer = t; }
+	void SetCooldownTimer(float t);
 	void ClearCooldownTimer();
 	void OnCooldownTimerExpired();
+	FColor GetCooldownColor() const;
 
 	void DrawDebugCurrentTile() const;
 	void DrawDebugStatus() const;
@@ -116,6 +117,8 @@ public:
 
 	UPROPERTY(BlueprintReadOnly)
 	float CooldownTimer;
+	UPROPERTY(BlueprintReadOnly)
+	float CooldownDuration;
 
 	UFUNCTION(BlueprintCallable)
 	virtual bool IsPlayerOnCooldown();
@@ -162,13 +165,13 @@ public:
 
 
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = PlayerData)
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "PlayerData")
 	float ExhaustedCooldownTime;
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = PlayerData)
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "PlayerData")
 	float KnockedDownTime;
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = PlayerData)
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "PlayerData")
 	float StunnedTime;
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = PlayerData)
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "PlayerData")
 	float StandUpTime;
 
 	UPROPERTY(BlueprintReadOnly)
@@ -179,23 +182,23 @@ public:
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	class UDataTable* PlayerDataTable;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = PlayerData)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PlayerData")
 	FString Race;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = PlayerData)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PlayerData")
 	FString Position;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = PlayerData)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PlayerData")
 	int32 Cost;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = PlayerData)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PlayerData")
 	int32 MA;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = PlayerData)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PlayerData")
 	int32 ST;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = PlayerData)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PlayerData")
 	int32 AG;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = PlayerData)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PlayerData")
 	int32 AV;
 
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = PlayerSettings)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PlayerSettings")
 	bool bRunThroughPlayers;
 
 	void LoadAttributesFromPlayerData(const FKFBB_PlayerData& data);

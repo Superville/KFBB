@@ -10,22 +10,22 @@
 void UKFBB_FieldTile::Init(AKFBB_Field* inField, int inIdx)
 {
 	Field = inField;
-	idx = inIdx;
-	x = Field->GetXByIndex(idx);
-	y = Field->GetYByIndex(idx);
+	TileIdx = inIdx;
+	TileX = Field->GetXByIndex(TileIdx);
+	TileY = Field->GetYByIndex(TileIdx);
 
-	TileLocation = Field->Origin + FVector(Field->TileSize * x, Field->TileSize * y, 0.f) + (Field->TileStep * 0.5f);
+	TileLocation = Field->Origin + FVector(Field->TileSize * TileX, Field->TileSize * TileY, 0.f) + (Field->TileStep * 0.5f);
 
-	if ((y - Field->EndZoneSize) < 0 || (y + Field->EndZoneSize) >= Field->Length)
+	if ((TileY - Field->EndZoneSize) < 0 || (TileY + Field->EndZoneSize) >= Field->Length)
 	{
 		bEndZone = true;
 	}
-	if ((x - Field->WideOutSize) < 0 || (x + Field->WideOutSize) >= Field->Width)
+	if ((TileX - Field->WideOutSize) < 0 || (TileX + Field->WideOutSize) >= Field->Width)
 	{
 		bWideOut = true;
 	}
 	auto HalfLength = Field->Length / 2;
-	if (y == HalfLength || y == (HalfLength - 1))
+	if (TileY == HalfLength || TileY == (HalfLength - 1))
 	{
 		bScrimmageLine = true;
 	}
@@ -105,6 +105,27 @@ AKFBB_Ball* UKFBB_FieldTile::GetBall() const
 		}
 	}
 	return nullptr;
+}
+
+FVector UKFBB_FieldTile::GetTileSize2D() const
+{
+	return Field != nullptr ? FVector(Field->TileSize, Field->TileSize, 0.f) : FVector::ZeroVector;
+}
+
+void UKFBB_FieldTile::DrawCooldownTimer(float Duration, float TimeRemaining, FColor DrawColor)
+{
+	if (!Field || Duration <= 0.f) { return; }
+	
+	float DurationPct = TimeRemaining / Duration;
+
+	float sign = (/* team0 */ false) ? -1 : 1;
+
+	FVector FieldDir = Field->GetActorRightVector();
+	FVector Shift = FieldDir * Field->TileSize * 0.5f * (1.f - DurationPct);
+	FVector Extent = (GetTileSize2D() * 0.5f) - Shift;
+	FVector Loc = TileLocation + FVector(0, 0, Field->TileHeight) + (Shift * sign);
+
+	DrawDebugSolidBox(GetWorld(), Loc, Extent, DrawColor);
 }
 
 void UKFBB_FieldTile::DrawDebugTile() const

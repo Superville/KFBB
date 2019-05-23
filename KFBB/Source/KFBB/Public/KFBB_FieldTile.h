@@ -6,6 +6,8 @@
 #include "Components/StaticMeshComponent.h"
 #include "KFBB_FieldTile.generated.h"
 
+class AKFBB_Field;
+
 /**
  * 
  */
@@ -16,11 +18,11 @@ class KFBB_API UKFBB_FieldTile : public UStaticMeshComponent
 	
 public:
 	UPROPERTY(BlueprintReadOnly)
-	int idx;
+	int TileIdx;
 	UPROPERTY(BlueprintReadOnly)
-	int x;
+	int TileX;
 	UPROPERTY(BlueprintReadOnly)
-	int y;
+	int TileY;
 
 	UPROPERTY(BlueprintReadOnly)
 	bool bEndZone;
@@ -41,7 +43,7 @@ public:
 	UKFBB_FieldTile* pathPrevTile;
 
 	UPROPERTY(BlueprintReadOnly)
-	class AKFBB_Field* Field;
+	AKFBB_Field* Field;
 	UPROPERTY(BlueprintReadOnly)
 	FVector TileLocation;
 	UPROPERTY(BlueprintReadOnly)
@@ -52,7 +54,6 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 	bool RegisterActor(AActor* a);
-
 	UFUNCTION(BlueprintCallable)
 	bool UnRegisterActor(AActor* a);
 
@@ -61,12 +62,15 @@ public:
 	UFUNCTION(BlueprintCallable)
 	bool HasBall() const;
 
+	FVector GetTileSize2D() const;
+
 	UFUNCTION(BlueprintCallable)
 	AKFBB_PlayerPawn* GetPlayer() const;
 	UFUNCTION(BlueprintCallable)
 	AKFBB_Ball* GetBall() const;
 
-
+	UFUNCTION(BlueprintCallable)
+	virtual void DrawCooldownTimer(float Duration, float TimeRemaining, FColor DrawColor);
 
 	UFUNCTION(BlueprintCallable)
 	void DrawDebugTile() const;

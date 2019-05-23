@@ -123,8 +123,8 @@ void AKFBB_CoachPC::SpawnPlayerOnTile()
 	int x = 0, y = 0;
 	if (SelectedTile != nullptr)
 	{
-		x = SelectedTile->x;
-		y = SelectedTile->y;
+		x = SelectedTile->TileX;
+		y = SelectedTile->TileY;
 	}
 	
 	SpawnPlayerOnTile(x, y);
@@ -151,8 +151,8 @@ void AKFBB_CoachPC::SpawnBallOnTile()
 	int x = 0, y = 0;
 	if (SelectedTile != nullptr)
 	{
-		x = SelectedTile->x;
-		y = SelectedTile->y;
+		x = SelectedTile->TileX;
+		y = SelectedTile->TileY;
 	}
 
 	SpawnBallOnTile(x, y);
