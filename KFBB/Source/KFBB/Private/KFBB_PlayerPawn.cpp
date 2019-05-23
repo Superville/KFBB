@@ -176,16 +176,18 @@ void AKFBB_PlayerPawn::NotifyReachedGrid()
 	auto AI = Cast<AKFBB_AIController>(GetController());
 	if (!AI) { return; }
 
-	if (CanPickupBall(BallOnTile) && TryPickupBall())
+	if (!BallOnTile->IsPossessed())
 	{
-		ClaimBall();
+		if (CanPickupBall(BallOnTile) && TryPickupBall())
+		{
+			ClaimBall();
+		}
+		else
+		{
+			FumbleBall();
+		}
+		AI->SetDestinationTile(nullptr);
 	}
-	else
-	{
-		FumbleBall();
-	}
-
-	AI->SetDestinationTile(nullptr);
 }
 
 void AKFBB_PlayerPawn::NotifyReachedDestinationGrid()
@@ -290,6 +292,7 @@ void AKFBB_PlayerPawn::ClaimBall()
 	if (Ball != nullptr)
 	{
 		Ball->RegisterWithPlayer(this);
+		AttachBall();
 		SetStatus(EKFBB_PlayerState::GrabBall);
 	}
 }
@@ -300,11 +303,16 @@ void AKFBB_PlayerPawn::AttachBall()
 	{
 		UE_LOG(LogTemp, Warning, TEXT("%s AttachBall %s"), *GetName(), *Ball->GetName());
 
-		const FAttachmentTransformRules atr(EAttachmentRule::KeepRelative,true);
+		
+		const FAttachmentTransformRules atr(EAttachmentRule::KeepRelative, true);
 		Ball->AttachToActor(this, atr, FName("BallSocket"));
+//		Ball->AttachToActor(this, FAttachmentTransformRules::KeepRelativeTransform);
 		Ball->SetActorRelativeLocation(FVector::ZeroVector);
 		Ball->SetActorRelativeRotation(FRotator::ZeroRotator);
 
+		//todo make SMC of ball native, so we can enable/disable sim physics on it
+		Ball->DisableComponentsSimulatePhysics();
+		
 		SetStatus(EKFBB_PlayerState::Ready);
 	}
 }

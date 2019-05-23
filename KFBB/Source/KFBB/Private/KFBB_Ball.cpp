@@ -136,7 +136,12 @@ float AKFBB_Ball::TimeSinceLastFumble() const
 
 bool AKFBB_Ball::CanBePickedUp() const
 {
-	return (!IsMoving() && TimeSinceLastFumble() > 1.f);
+	return (!IsPossessed() && !IsMoving() && TimeSinceLastFumble() > 1.f);
+}
+
+bool AKFBB_Ball::IsPossessed() const
+{
+	return (OwningPlayer != nullptr);
 }
 
 bool AKFBB_Ball::IsMoving() const
