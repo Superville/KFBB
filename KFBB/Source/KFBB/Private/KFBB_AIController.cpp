@@ -84,6 +84,8 @@ bool AKFBB_AIController::SetDestinationTile(UKFBB_FieldTile* DestTile)
 {
 	auto BB = GetBlackboardComponent();
 	if (!BB) { return false; }
+	auto P = Cast<AKFBB_PlayerPawn>(GetPawn());
+	if (!P) { return false; }
 
 	DestinationTile = DestTile;
 	PathToDestTile.Empty();
@@ -95,7 +97,7 @@ bool AKFBB_AIController::SetDestinationTile(UKFBB_FieldTile* DestTile)
 		return true;
 	}
 
-	bool bSuccess = GeneratePathToTile(DestinationTile);
+	bool bSuccess = (DestinationTile == P->CurrentTile) || GeneratePathToTile(DestinationTile);
 	if (bSuccess)
 	{
 		BB->SetValueAsBool(PathSetName, true);

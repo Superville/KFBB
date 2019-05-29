@@ -6,6 +6,10 @@
 #include "GameFramework/GameModeBase.h"
 #include "KFBBGameModeBase.generated.h"
 
+class UUserWidget; 
+class AKFBB_Field;
+class AKFBB_PlayerPawn;
+
 /**
 *
 */
@@ -13,35 +17,33 @@ UCLASS()
 class KFBB_API AKFBBGameModeBase : public AGameModeBase
 {
 	GENERATED_BODY()
-
-
+		
 protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Meta = (BlueprintProtected = "true"))
-		float GameDurationInSeconds;
+	float GameDurationInSeconds;
 	UPROPERTY()
-		float CurrentGameTimer;
+	float CurrentGameTimer;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "HUD", Meta = (BlueprintProtected = "true"))
-		TSubclassOf<class UUserWidget> HUDWidgetClass;
+	TSubclassOf<UUserWidget> HUDWidgetClass;
 	UPROPERTY()
-		class UUserWidget* CurrentWidget;
+	UUserWidget* CurrentWidget;
 
 	UPROPERTY()
-		class AKFBB_Field* Field;
+	AKFBB_Field* Field;
 
 public:
 	UFUNCTION(BlueprintPure)
-		float GetRemainingGameTime() const;
-
+	float GetRemainingGameTime() const;
 	UFUNCTION(BlueprintPure)
-		int GetFieldWidth() const;
-
+	int GetFieldWidth() const;
 	UFUNCTION(BlueprintPure)
-		int GetFieldLength() const;
-
+	int GetFieldLength() const;
 	UFUNCTION(BlueprintPure)
-		FVector GetFieldTileLocation(int x, int y) const;
+	FVector GetFieldTileLocation(int x, int y) const;
 
 	virtual void BeginPlay() override;
 	virtual void Tick(float DeltaTime) override;
+
+	virtual void ResolveCollision(AKFBB_PlayerPawn* PawnA, AKFBB_PlayerPawn* PawnB);
 };

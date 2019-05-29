@@ -121,6 +121,15 @@ UKFBB_FieldTile* AKFBB_Field::GetAdjacentTile(UKFBB_FieldTile* tile, FTileDir di
 	return Tiles[idx];
 }
 
+/* return FTileDir from a to b*/
+FTileDir AKFBB_Field::GetTileDir(UKFBB_FieldTile* a, UKFBB_FieldTile* b)
+{
+	int xDelta = b->TileX - a->TileX;
+	int yDetla = b->TileY - a->TileY;
+
+	return FTileDir(xDelta, yDetla);
+}
+
 // Called every frame
 void AKFBB_Field::Tick(float DeltaTime)
 {
@@ -130,7 +139,9 @@ void AKFBB_Field::Tick(float DeltaTime)
 int AKFBB_Field::GetIndexByXY(int x, int y) const
 {
 	if (x < 0 || x >= Width || y < 0 || y >= Length)
+	{
 		return -1;
+	}
 
 	return (y * Width) + x;
 }

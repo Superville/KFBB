@@ -6,6 +6,9 @@
 #include "GameFramework/Actor.h"
 #include "KFBB_Field.generated.h"
 
+class USceneComponent;
+class UKFBB_FieldTile;
+
 USTRUCT()
 struct FTileDir
 {
@@ -44,7 +47,7 @@ public:
 	// Searches the map for a KFBB_Field actor and assigns it to the pointer ref
 	static bool AssignFieldActor(AActor* src, AKFBB_Field*& ptrField);
 
-	TArray<class UKFBB_FieldTile*> Tiles;
+	TArray<UKFBB_FieldTile*> Tiles;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	int Length;
@@ -60,7 +63,7 @@ public:
 	int WideOutSize;
 
 	UPROPERTY()
-	class USceneComponent* Root;
+	USceneComponent* Root;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	UStaticMesh* TileMesh;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
@@ -93,7 +96,8 @@ public:
 
 	TArray<struct FTileDir> TileDirections;
 	FTileDir GetScatterDirection(short centerX = 0, short centerY = 0, int cone = 4);
-	class UKFBB_FieldTile* GetAdjacentTile(class UKFBB_FieldTile* tile, FTileDir dir);
+	UKFBB_FieldTile* GetAdjacentTile(UKFBB_FieldTile* tile, FTileDir dir);
+	FTileDir GetTileDir(UKFBB_FieldTile* a, UKFBB_FieldTile* b);
 };
 
 

@@ -1,9 +1,14 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 #include "KFBBGameModeBase.h"
-#include "KFBB_Field.h"
+
+// Engine Includes
 #include "EngineUtils.h"
 #include "Blueprint/UserWidget.h"
+
+// KFBB Includes
+#include "KFBB_Field.h"
+#include "KFBB_PlayerPawn.h"
 
 
 void AKFBBGameModeBase::BeginPlay()
@@ -56,4 +61,19 @@ FVector AKFBBGameModeBase::GetFieldTileLocation(int x, int y) const
 		return FVector::ZeroVector;
 
 	return Field->GetFieldTileLocation(x, y);
+}
+
+void AKFBBGameModeBase::ResolveCollision(AKFBB_PlayerPawn* PawnA, AKFBB_PlayerPawn* PawnB)
+{
+	// PawnA = player already occupying tile
+	// PawnB = player moving onto the tile, PawnB->PreviousTile will give direction of movement
+
+	auto KnockDirA = Field->GetTileDir(PawnB->PreviousTile, PawnB->CurrentTile);
+	auto KnockDirB = Field->GetTileDir(PawnB->CurrentTile, PawnB->PreviousTile);
+	
+// 	KnockDirA.x = 0;
+// 	KnockDirB.y = 0;
+
+	PawnA->KnockDown(KnockDirA);
+	PawnB->KnockDown(KnockDirB);
 }

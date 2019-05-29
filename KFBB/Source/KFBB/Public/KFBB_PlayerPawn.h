@@ -7,6 +7,15 @@
 #include "GameFramework/Character.h"
 #include "KFBB_PlayerPawn.generated.h"
 
+class UPrimitiveComponent;
+class UStaticMeshComponent;
+class UInputComponent;
+class UDataTable;
+struct FTileDir;
+class AKFBB_Field;
+class UKFBB_FieldTile;
+class AKFBB_CoachPC;
+class AKFBB_Ball;
 
 UENUM(BlueprintType)
 namespace EKFBB_PlayerState
@@ -78,8 +87,7 @@ class KFBB_API AKFBB_PlayerPawn : public ACharacter
 	GENERATED_BODY()
 
 	void RegisterWithField();
-	void RegisterWithTile(class UKFBB_FieldTile* Tile);
-
+	void RegisterWithTile(UKFBB_FieldTile* Tile);
 
 	void SetCooldownTimer(float t);
 	void ClearCooldownTimer();
@@ -91,6 +99,8 @@ class KFBB_API AKFBB_PlayerPawn : public ACharacter
 	void DrawDebugPath() const;
 	FColor GetDebugColor() const;
 	FString GetStatusString() const;
+
+	
 	
 public:
 	// Sets default values for this pawn's properties
@@ -105,14 +115,19 @@ public:
 	virtual void Tick(float DeltaTime) override;
 
 	// Called to bind functionality to input
-	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
+	virtual void SetupPlayerInputComponent(UInputComponent* PlayerInputComponent) override;
+
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, meta = (AllowPrivateAccess = "true"))
+	UStaticMeshComponent* Pill = nullptr;
 
 	UPROPERTY(BlueprintReadOnly)
-	class AKFBB_CoachPC* Coach;
+	AKFBB_CoachPC* Coach;
 	UPROPERTY(BlueprintReadOnly)
-	class AKFBB_Field *Field;
+	AKFBB_Field *Field;
 	UPROPERTY(BlueprintReadOnly)
-	class UKFBB_FieldTile* CurrentTile;
+	UKFBB_FieldTile* CurrentTile;
+	UPROPERTY(BlueprintReadOnly)
+	UKFBB_FieldTile* PreviousTile;
 
 
 	UPROPERTY(BlueprintReadOnly)
@@ -132,7 +147,8 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Grid Pathing")
 	virtual void NotifyReachedDestinationGrid();
 
-	virtual void NotifyHit(class UPrimitiveComponent* MyComp, AActor* Other, class UPrimitiveComponent* OtherComp, bool bSelfMoved, FVector HitLocation, FVector HitNormal, FVector NormalImpulse, const FHitResult& Hit) override;
+	virtual void NotifyHit(UPrimitiveComponent* MyComp, AActor* Other, UPrimitiveComponent* OtherComp, bool bSelfMoved, FVector HitLocation, FVector HitNormal, FVector NormalImpulse, const FHitResult& Hit) override;
+	virtual void KnockDown(FTileDir dir);
 
 	void SetStatus(EKFBB_PlayerState::Type newStatus);
 
@@ -152,7 +168,7 @@ public:
 	bool IsGrabbingBall() { return Status == EKFBB_PlayerState::GrabBall; }
 
 
-	class AKFBB_Ball* Ball;
+	AKFBB_Ball* Ball;
 	UFUNCTION(BlueprintCallable)
 	bool HasBall() const;
 	bool CanPickupBall(AKFBB_Ball* ball) const;
@@ -181,7 +197,7 @@ public:
 	int TestStatus;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
-	class UDataTable* PlayerDataTable;
+	UDataTable* PlayerDataTable;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PlayerData")
 	FString Race;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PlayerData")

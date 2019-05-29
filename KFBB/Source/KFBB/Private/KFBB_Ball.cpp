@@ -13,6 +13,9 @@
 // Sets default values
 AKFBB_Ball::AKFBB_Ball()
 {
+	BallSMC = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("BallSMC"));
+	SetRootComponent(BallSMC);
+
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 }
@@ -114,16 +117,16 @@ void AKFBB_Ball::UnRegisterWithPlayer()
 
 void AKFBB_Ball::FumbleBall(UKFBB_FieldTile* DestTile)
 {
-	auto smc = Cast<UStaticMeshComponent>(GetRootComponent());
-	if (smc != nullptr)
+	if (BallSMC != nullptr)
 	{
 		FVector ballVel = (DestTile->TileLocation - CurrentTile->TileLocation).GetSafeNormal2D() * 100;
 		ballVel.Z += 250;
 
 		FVector ballAngVel = FMath::VRand() * (FMath::FRandRange(-10.f, 10.f));
-
-		smc->SetPhysicsLinearVelocity(ballVel);
-		smc->SetPhysicsAngularVelocityInDegrees(ballAngVel);
+		
+		BallSMC->SetSimulatePhysics(true);
+		BallSMC->SetPhysicsLinearVelocity(ballVel);
+		BallSMC->SetPhysicsAngularVelocityInDegrees(ballAngVel);
 	}
 
 	LastFumbleTime = GetWorld()->TimeSeconds;

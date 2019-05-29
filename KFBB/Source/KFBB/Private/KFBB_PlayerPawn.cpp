@@ -4,6 +4,8 @@
 
 // Engine Includes
 #include "DrawDebugHelpers.h"
+#include "Components/StaticMeshComponent.h"
+#include "Engine/CollisionProfile.h"
 
 // KFBB Includes
 #include "KFBB_AIController.h"
@@ -13,12 +15,20 @@
 #include "KFBB_Ball.h"
 #include "KFBB.h"
 #include "KFBB_BallMovementComponent.h"
+#include "KFBBGameModeBase.h"
 
 // Sets default values
 AKFBB_PlayerPawn::AKFBB_PlayerPawn()
 {
  	// Set this pawn to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
+
+	Pill = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Pill"));
+	Pill->SetupAttachment(RootComponent);
+	Pill->SetRelativeScale3D(FVector(0.35f, 0.35f, 0.9f));
+	Pill->SetCollisionProfileName(UCollisionProfile::NoCollision_ProfileName);
+	Pill->SetMobility(EComponentMobility::Movable);
+	Pill->SetGenerateOverlapEvents(false);
 }
 
 // Called when the game starts or when spawned
@@ -76,13 +86,30 @@ void AKFBB_PlayerPawn::RegisterWithField()
 	}
 }
 
-void AKFBB_PlayerPawn::RegisterWithTile(class UKFBB_FieldTile* Tile)
+void AKFBB_PlayerPawn::RegisterWithTile(UKFBB_FieldTile* Tile)
 {
 	if (CurrentTile != Tile)
 	{
-		if (CurrentTile != nullptr) { CurrentTile->UnRegisterActor(this); }
+		auto PlayerAlreadyOnTile = Tile ? Tile->GetPlayer() : nullptr;
+
+		if (CurrentTile != nullptr) 
+		{ 
+			CurrentTile->UnRegisterActor(this); 
+		}
+		
+		PreviousTile = CurrentTile;
 		CurrentTile = Tile;
-		if (CurrentTile != nullptr) { CurrentTile->RegisterActor(this); }
+		
+		if (CurrentTile != nullptr) 
+		{ 
+			CurrentTile->RegisterActor(this); 
+		}
+
+		if (PlayerAlreadyOnTile != nullptr)
+		{
+			auto GM = Cast<AKFBBGameModeBase>(GetWorld()->GetAuthGameMode());
+			GM->ResolveCollision(PlayerAlreadyOnTile, this);
+		}
 	}
 }
 
@@ -215,6 +242,17 @@ void AKFBB_PlayerPawn::NotifyHit(class UPrimitiveComponent* MyComp, AActor* Othe
 	}
 }
 
+void AKFBB_PlayerPawn::KnockDown(FTileDir dir)
+{
+	auto AI = Cast<AKFBB_AIController>(Controller);
+	if (AI != nullptr)
+	{
+		AI->SetDestinationTile(Field->GetAdjacentTile(CurrentTile, dir));
+	}
+
+	SetStatus(EKFBB_PlayerState::KnockedDown);
+}
+
 void AKFBB_PlayerPawn::SetStatus(EKFBB_PlayerState::Type newStatus)
 {
 	Status = newStatus;
@@ -230,7 +268,6 @@ void AKFBB_PlayerPawn::SetStatus(EKFBB_PlayerState::Type newStatus)
 		SetCooldownTimer(ExhaustedCooldownTime);
 		break;
 	case EKFBB_PlayerState::KnockedDown:
-		AI->SetDestinationTile(nullptr);
 		SetCooldownTimer(KnockedDownTime);
 		break;
 	case EKFBB_PlayerState::Stunned:
@@ -303,16 +340,9 @@ void AKFBB_PlayerPawn::AttachBall()
 	{
 		UE_LOG(LogTemp, Warning, TEXT("%s AttachBall %s"), *GetName(), *Ball->GetName());
 
-		
-		const FAttachmentTransformRules atr(EAttachmentRule::KeepRelative, true);
-		Ball->AttachToActor(this, atr, FName("BallSocket"));
-//		Ball->AttachToActor(this, FAttachmentTransformRules::KeepRelativeTransform);
-		Ball->SetActorRelativeLocation(FVector::ZeroVector);
-		Ball->SetActorRelativeRotation(FRotator::ZeroRotator);
+		Ball->BallSMC->SetSimulatePhysics(false);
+		Ball->AttachToComponent(Pill, FAttachmentTransformRules::SnapToTargetNotIncludingScale, FName("BallSocket"));
 
-		//todo make SMC of ball native, so we can enable/disable sim physics on it
-		Ball->DisableComponentsSimulatePhysics();
-		
 		SetStatus(EKFBB_PlayerState::Ready);
 	}
 }

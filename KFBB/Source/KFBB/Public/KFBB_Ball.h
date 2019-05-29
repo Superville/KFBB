@@ -17,7 +17,8 @@ class KFBB_API AKFBB_Ball : public AActor
 
 	bool bOnGround;
 	float LastFumbleTime;
-	
+
+
 public:	
 	// Sets default values for this actor's properties
 	AKFBB_Ball();
@@ -27,6 +28,10 @@ protected:
 	virtual void BeginPlay() override;
 
 public:	
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, meta = (AllowPrivateAccess = "true"))
+	UStaticMeshComponent* BallSMC = nullptr;
+
+
 	UPROPERTY(BlueprintReadOnly)
 	class AKFBB_Field *Field;
 	UPROPERTY(BlueprintReadOnly)
