@@ -6,6 +6,11 @@
 #include "GameFramework/PlayerController.h"
 #include "KFBB_CoachPC.generated.h"
 
+class AKFBB_PlayerPawn;
+class AKFBB_Field;
+class UKFBB_Field_Tile;
+class AKFBB_Ball;
+
 /**
  * 
  */
@@ -16,7 +21,10 @@ class KFBB_API AKFBB_CoachPC : public APlayerController
 
 	void DrawDebugTouchedTile(UKFBB_FieldTile* t);
 
-	void SetDestinationTile(UKFBB_FieldTile* t);
+	virtual void SetSelectedPlayer(AKFBB_PlayerPawn* p);
+	virtual void SetSelectedTile(UKFBB_FieldTile* t);
+	virtual void SetDestinationTile(UKFBB_FieldTile* t);
+	virtual void ConfirmCommand();
 
 public:
 	virtual void BeginPlay() override;
@@ -36,23 +44,25 @@ public:
 	void SpawnBallOnTile();
 	void SpawnBallOnTile(int x, int y);
 
-	class AKFBB_PlayerPawn* GetSelectedPlayer() const;
+	AKFBB_PlayerPawn* GetSelectedPlayer() const;
 
 	UFUNCTION(BlueprintCallable)
 	void ClearTileSelection();
 
 	UPROPERTY(BlueprintReadonly)
-	class AKFBB_Field* Field;
+	AKFBB_Field* Field;
 
 	UPROPERTY(BlueprintReadonly)
-	class UKFBB_FieldTile* SelectedTile;
+	UKFBB_FieldTile* SelectedTile;
 	UPROPERTY(BlueprintReadonly)
-	class UKFBB_FieldTile* DestinationTile;
+	UKFBB_FieldTile* DestinationTile;
+	UPROPERTY(BlueprintReadonly)
+	AKFBB_PlayerPawn* SelectedPlayer;
 
 	UPROPERTY(EditDefaultsOnly)
-	TSubclassOf<class AKFBB_PlayerPawn> PlayerClass;
+	TSubclassOf<AKFBB_PlayerPawn> PlayerClass;
 	UPROPERTY(EditDefaultsOnly)
-	TSubclassOf<class AKFBB_Ball> BallClass;
+	TSubclassOf<AKFBB_Ball> BallClass;
 
 
 	UPROPERTY(EditDefaultsOnly)

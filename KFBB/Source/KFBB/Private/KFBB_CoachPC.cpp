@@ -33,6 +33,10 @@ void AKFBB_CoachPC::Tick(float DeltaTime)
 	{
 		DestinationTile->DrawDebugTileOverride(FVector(0, 0, 2), 0.45f, FColor::Purple);
 	}
+	if (SelectedPlayer != nullptr && SelectedPlayer->CurrentTile != nullptr)
+	{
+		SelectedPlayer->CurrentTile->DrawDebugTileOverride(FVector(0, 0, 4), 0.5f, FColor::Green);
+	}
 
 	if (SelectedTile != nullptr && 
 		DestinationTile == nullptr && 
@@ -71,13 +75,40 @@ AKFBB_PlayerPawn* AKFBB_CoachPC::GetSelectedPlayer() const
 void AKFBB_CoachPC::PlayerTouchScreen()
 {
 	UKFBB_FieldTile* Tile = GetTileUnderMouse();
+	AKFBB_PlayerPawn* PlayerOnTile = Tile ? Tile->GetPlayer() : nullptr;
 
-	if (DestinationTile != nullptr || Tile == nullptr)
+	if (PlayerOnTile && PlayerOnTile != SelectedPlayer)
+	{
+		SetSelectedPlayer(PlayerOnTile);
+	}
+	else if (SelectedPlayer && !PlayerOnTile)
+	{
+		if (!SelectedTile || Tile != SelectedTile)
+		{
+			SetSelectedTile(Tile);
+		}
+		else if (Tile && Tile == SelectedTile)
+		{
+			SetDestinationTile(Tile);
+			ConfirmCommand();
+		}
+		else
+		{
+			ClearTileSelection();
+		}
+	}
+
+/*
+	// If clicked on the same dest tile
+	if (DestinationTile != nullptr && Tile == DestinationTile)
+	{
+		ConfirmCommand();
+	}
+	else if (DestinationTile != nullptr || Tile == nullptr)
 	{
 		ClearTileSelection();
 	}
-
-	if (Tile != nullptr)
+	else if (Tile != nullptr)
 	{
 		//DrawDebugTouchedTile(Tile);
 
@@ -93,38 +124,49 @@ void AKFBB_CoachPC::PlayerTouchScreen()
 		{
 			SetDestinationTile(Tile);
 		}
-	}
+	}*/
+}
+
+void AKFBB_CoachPC::SetSelectedPlayer(AKFBB_PlayerPawn* p)
+{
+	SelectedPlayer = p;
+}
+
+void AKFBB_CoachPC::SetSelectedTile(UKFBB_FieldTile* t)
+{
+	SelectedTile = t;
 }
 
 void AKFBB_CoachPC::SetDestinationTile(UKFBB_FieldTile* t)
 {
 	DestinationTile = t;
-	if (!DestinationTile) { return; }
+}
 
-	auto P = GetSelectedPlayer();
-	if (!P) { return; }
-
-	auto AI = Cast<AKFBB_AIController>(P->Controller);
+void AKFBB_CoachPC::ConfirmCommand()
+{
+	if (!DestinationTile || !SelectedPlayer) { return; }
+	auto AI = Cast<AKFBB_AIController>(SelectedPlayer->Controller);
 	if (!AI) { return; }
-	
-	if (P->CanAcceptCommand() &&
-	    AI->SetDestinationTile(DestinationTile))
+
+	if (SelectedPlayer->CanAcceptCommand() &&
+		AI->SetDestinationTile(DestinationTile))
 	{
-		P->SetStatus(EKFBB_PlayerState::Moving);
+		SelectedPlayer->SetStatus(EKFBB_PlayerState::Moving);
 	}
 	else
 	{
-		P->NotifyCommandFailed();
+		SelectedPlayer->NotifyCommandFailed();
 	}
 }
 
 void AKFBB_CoachPC::SpawnPlayerOnTile()
 {
 	int x = 0, y = 0;
-	if (SelectedTile != nullptr)
+	UKFBB_FieldTile* Tile = GetTileUnderMouse();
+	if (Tile != nullptr)
 	{
-		x = SelectedTile->TileX;
-		y = SelectedTile->TileY;
+		x = Tile->TileX;
+		y = Tile->TileY;
 	}
 	
 	SpawnPlayerOnTile(x, y);
@@ -149,10 +191,11 @@ void AKFBB_CoachPC::SpawnPlayerOnTile(int x, int y)
 void AKFBB_CoachPC::SpawnBallOnTile()
 {
 	int x = 0, y = 0;
-	if (SelectedTile != nullptr)
+	UKFBB_FieldTile* Tile = GetTileUnderMouse();
+	if (Tile != nullptr)
 	{
-		x = SelectedTile->TileX;
-		y = SelectedTile->TileY;
+		x = Tile->TileX;
+		y = Tile->TileY;
 	}
 
 	SpawnBallOnTile(x, y);
