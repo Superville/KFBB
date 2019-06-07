@@ -16,6 +16,7 @@ class AKFBB_Field;
 class UKFBB_FieldTile;
 class AKFBB_CoachPC;
 class AKFBB_Ball;
+class UKFBBAttributeSet;
 
 UENUM(BlueprintType)
 namespace EKFBB_PlayerState
@@ -178,18 +179,6 @@ public:
 	void AttachBall();
 	void FumbleBall();
 
-
-
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "PlayerData")
-	float ExhaustedCooldownTime;
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "PlayerData")
-	float KnockedDownTime;
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "PlayerData")
-	float StunnedTime;
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "PlayerData")
-	float StandUpTime;
-
 	UPROPERTY(BlueprintReadOnly)
 	TEnumAsByte<EKFBB_PlayerState::Type> Status;
 	//test
@@ -204,14 +193,9 @@ public:
 	FString Position;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PlayerData")
 	int32 Cost;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PlayerData")
-	int32 MA;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PlayerData")
-	int32 ST;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PlayerData")
-	int32 AG;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PlayerData")
-	int32 AV;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "PlayerData")
+	UKFBBAttributeSet* AttribSet;
 
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PlayerSettings")

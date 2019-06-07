@@ -16,6 +16,7 @@
 #include "KFBB.h"
 #include "KFBB_BallMovementComponent.h"
 #include "KFBBGameModeBase.h"
+#include "Player/KFBBAttributeSet.h"
 
 // Sets default values
 AKFBB_PlayerPawn::AKFBB_PlayerPawn()
@@ -29,6 +30,9 @@ AKFBB_PlayerPawn::AKFBB_PlayerPawn()
 	Pill->SetCollisionProfileName(UCollisionProfile::NoCollision_ProfileName);
 	Pill->SetMobility(EComponentMobility::Movable);
 	Pill->SetGenerateOverlapEvents(false);
+
+
+	AttribSet = CreateDefaultSubobject<UKFBBAttributeSet>(FName("AttribSet"));
 }
 
 // Called when the game starts or when spawned
@@ -265,16 +269,16 @@ void AKFBB_PlayerPawn::SetStatus(EKFBB_PlayerState::Type newStatus)
 	case EKFBB_PlayerState::Moving:
 		break;
 	case EKFBB_PlayerState::Exhausted:
-		SetCooldownTimer(ExhaustedCooldownTime);
+		SetCooldownTimer(AttribSet->Stat_ExhaustCD.GetCurrentValue());
 		break;
 	case EKFBB_PlayerState::KnockedDown:
-		SetCooldownTimer(KnockedDownTime);
+		SetCooldownTimer(AttribSet->Stat_KnockDownCD.GetCurrentValue());
 		break;
 	case EKFBB_PlayerState::Stunned:
-		SetCooldownTimer(StunnedTime);
+		SetCooldownTimer(AttribSet->Stat_StunCD.GetCurrentValue());
 		break;
 	case EKFBB_PlayerState::StandingUp:
-		SetCooldownTimer(StandUpTime);
+		SetCooldownTimer(AttribSet->Stat_StandCD.GetCurrentValue());
 		break;
 	case EKFBB_PlayerState::Ready:
 		break;
@@ -423,15 +427,16 @@ void AKFBB_PlayerPawn::LoadAttributesFromPlayerData(const FKFBB_PlayerData& data
 	Race = data.Race;
 	Position = data.Position;
 	Cost = data.Cost;
-	MA = data.MA;
-	ST = data.ST;
-	AG = data.AG;
-	AV = data.AV;
+
+	AttribSet->Stat_Movement.SetBaseValue(data.MA);
+	AttribSet->Stat_Strength.SetBaseValue(data.ST);
+	AttribSet->Stat_Agility.SetBaseValue(data.AG);
+	AttribSet->Stat_Armor.SetBaseValue(data.AV);
 	
-	ExhaustedCooldownTime = data.ExhaustCD;
-	KnockedDownTime = data.KnockCD;
-	StunnedTime = data.StunCD;
-	StandUpTime = data.StandCD;
+	AttribSet->Stat_ExhaustCD.SetBaseValue(data.ExhaustCD);
+	AttribSet->Stat_KnockDownCD.SetBaseValue(data.KnockCD);
+	AttribSet->Stat_StunCD.SetBaseValue(data.StunCD);
+	AttribSet->Stat_StandCD.SetBaseValue(data.StandCD);
 }
 
 void AKFBB_PlayerPawn::LoadAttributesByDataName(FString RowName)
