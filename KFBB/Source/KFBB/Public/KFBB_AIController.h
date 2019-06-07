@@ -36,10 +36,9 @@ public:
 	UPROPERTY(BlueprintReadonly)
 	TArray<UKFBB_FieldTile*> PathToDestTile;
 
-	UFUNCTION()
 	virtual bool SetDestinationTile(UKFBB_FieldTile* DestTile);
-
-	
+	virtual bool SetDestinationTile(TArray<UKFBB_FieldTile*>& ProvidedPath);
+	virtual void ClearDestinationTile();
 
 	void ClearPathing();
 	bool GeneratePathToTile(UKFBB_FieldTile* DestTile);

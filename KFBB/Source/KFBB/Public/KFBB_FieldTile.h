@@ -7,6 +7,7 @@
 #include "KFBB_FieldTile.generated.h"
 
 class AKFBB_Field;
+struct FTileDir;
 
 /**
  * 
@@ -63,11 +64,14 @@ public:
 	bool HasBall() const;
 
 	FVector GetTileSize2D() const;
+	float GetTileSize() const;
 
 	UFUNCTION(BlueprintCallable)
 	AKFBB_PlayerPawn* GetPlayer() const;
 	UFUNCTION(BlueprintCallable)
 	AKFBB_Ball* GetBall() const;
+
+	UKFBB_FieldTile* GetAdjacentTile(FTileDir dir);
 
 	UFUNCTION(BlueprintCallable)
 	virtual void DrawCooldownTimer(float Duration, float TimeRemaining, FColor DrawColor);
@@ -75,6 +79,6 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void DrawDebugTile() const;
 	void DrawDebugTile(FVector offset) const;
-	void DrawDebugTileOverride(FVector offset, float scale, FColor c) const;
+	void DrawDebugTileOverride(FVector offset, float scale, FColor c, float thickness = 0.f) const;
 	FColor GetDebugColor() const;
 };

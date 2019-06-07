@@ -11,6 +11,31 @@
 #include "DrawDebugHelpers.h"
 #include "EngineUtils.h"
 
+
+FTileDir FTileDir::ConvertToTileDir(FVector2D v)
+{
+	v = v.GetSafeNormal();
+	if (FMath::Abs(v.X) > 0.7f)
+	{
+		v.X = (v.X < 0) ? -1 : 1;
+	}
+	else
+	{
+		v.X = 0;
+	}
+
+	if (FMath::Abs(v.Y) > 0.7f)
+	{
+		v.Y = (v.Y < 0) ? -1 : 1;
+	}
+	else
+	{
+		v.Y = 0;
+	}
+
+	return FTileDir(v.X, v.Y);
+}
+
 // Sets default values
 AKFBB_Field::AKFBB_Field()
 {
@@ -114,6 +139,13 @@ void AKFBB_Field::OnConstruction(const FTransform& Transform)
 	}
 }
 
+bool AKFBB_Field::AreAdjacentTiles(UKFBB_FieldTile* a, UKFBB_FieldTile* b)
+{
+	if (!a || !b) { return false; }
+
+	return (FMath::Abs(a->TileX - b->TileX) <= 1) && (FMath::Abs(a->TileY - b->TileY) <= 1);
+}
+
 UKFBB_FieldTile* AKFBB_Field::GetAdjacentTile(UKFBB_FieldTile* tile, FTileDir dir)
 {
 	int idx = GetIndexByXY(tile->TileX + dir.x, tile->TileY + dir.y);
@@ -124,6 +156,8 @@ UKFBB_FieldTile* AKFBB_Field::GetAdjacentTile(UKFBB_FieldTile* tile, FTileDir di
 /* return FTileDir from a to b*/
 FTileDir AKFBB_Field::GetTileDir(UKFBB_FieldTile* a, UKFBB_FieldTile* b)
 {
+	if (!a || !b) { return FTileDir(0, 0); }
+
 	int xDelta = b->TileX - a->TileX;
 	int yDetla = b->TileY - a->TileY;
 

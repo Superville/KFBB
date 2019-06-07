@@ -62,7 +62,7 @@ void AKFBB_PlayerPawn::Tick(float DeltaTime)
 	}
 	
 	//debug
-	DrawDebugCurrentTile();
+//	DrawDebugCurrentTile();
 //	DrawDebugStatus();
 	DrawDebugPath();
 }
@@ -213,7 +213,7 @@ void AKFBB_PlayerPawn::NotifyReachedGrid()
 		{
 			FumbleBall();
 		}
-		AI->SetDestinationTile(nullptr);
+		AI->ClearDestinationTile();
 	}
 }
 
@@ -227,7 +227,7 @@ void AKFBB_PlayerPawn::NotifyReachedDestinationGrid()
 		SetStatus(EKFBB_PlayerState::Exhausted);
 	}
 
-	AI->SetDestinationTile(nullptr);
+	AI->ClearDestinationTile();
 }
 
 void AKFBB_PlayerPawn::NotifyHit(class UPrimitiveComponent* MyComp, AActor* Other, class UPrimitiveComponent* OtherComp, bool bSelfMoved, FVector HitLocation, FVector HitNormal, FVector NormalImpulse, const FHitResult& Hit)

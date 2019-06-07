@@ -21,6 +21,8 @@ struct FTileDir
 
 	FORCEINLINE bool operator==(const FTileDir& V) const { return x == V.x && y == V.y; }
 	FORCEINLINE bool operator!=(const FTileDir& V) const { return x != V.x || y != V.y; }
+
+	static FTileDir ConvertToTileDir(FVector2D v);
 };
 
 UCLASS()
@@ -97,6 +99,7 @@ public:
 	TArray<struct FTileDir> TileDirections;
 	FTileDir GetScatterDirection(short centerX = 0, short centerY = 0, int cone = 4);
 	UKFBB_FieldTile* GetAdjacentTile(UKFBB_FieldTile* tile, FTileDir dir);
+	static bool AreAdjacentTiles(UKFBB_FieldTile* a, UKFBB_FieldTile* b);
 	FTileDir GetTileDir(UKFBB_FieldTile* a, UKFBB_FieldTile* b);
 };
 

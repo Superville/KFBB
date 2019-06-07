@@ -31,10 +31,23 @@ public:
 	virtual void Tick(float DeltaTime) override;
 
 	UFUNCTION(BlueprintCallable)
-	void PlayerTouchScreen();
+	virtual void PlayerTouchScreen();
+	UFUNCTION(BlueprintCallable)
+	virtual void PlayerUntouchScreen();
+	virtual void BeginDragTouch(UKFBB_FieldTile* Tile);
+	virtual void EndDragTouch(UKFBB_FieldTile* Tile);
+	virtual void CheckDragPath();
+	UKFBB_FieldTile* StartDragTile = nullptr;
+	bool bIsDraggingPath = false;
+	bool bIsDragging = false;
 
 	UFUNCTION(BlueprintCallable)
-	UKFBB_FieldTile* GetTileUnderMouse();
+	UKFBB_FieldTile* GetTileUnderMouse( float ReqDistFromCenterScale = 0.f);
+	float MouseUnderTileScalar = 0.75f;
+	FVector MouseWorldLoc;
+	FVector MouseWorldDir;
+	virtual void UpdateDisplayTileUnderMouse();
+	UKFBB_FieldTile* DisplayTileUnderMouse = nullptr;
 
 	UFUNCTION(BlueprintCallable)
 	void SpawnPlayerOnTile();
@@ -53,11 +66,15 @@ public:
 	AKFBB_Field* Field;
 
 	UPROPERTY(BlueprintReadonly)
+	TArray<UKFBB_FieldTile*> SelectedTileList;
+	UPROPERTY(BlueprintReadonly)
 	UKFBB_FieldTile* SelectedTile;
 	UPROPERTY(BlueprintReadonly)
 	UKFBB_FieldTile* DestinationTile;
 	UPROPERTY(BlueprintReadonly)
 	AKFBB_PlayerPawn* SelectedPlayer;
+	UPROPERTY(BlueprintReadonly)
+	AKFBB_PlayerPawn* PrevSelectedPlayer;
 
 	UPROPERTY(EditDefaultsOnly)
 	TSubclassOf<AKFBB_PlayerPawn> PlayerClass;
@@ -67,5 +84,10 @@ public:
 
 	UPROPERTY(EditDefaultsOnly)
 	float PlayerSpawnOffsetZ;
-	
+
+
+	//debug
+	virtual void DrawDebug(float DeltaTime);
+	bool bDebugHighlightSelectedTile = false;
+	float DebugFlashSelectedTileTimer;
 };

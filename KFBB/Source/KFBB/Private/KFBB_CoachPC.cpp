@@ -23,43 +23,53 @@ void AKFBB_CoachPC::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-	auto MouseTile = GetTileUnderMouse();
+	UpdateDisplayTileUnderMouse();
+	CheckDragPath();
 
-	if (SelectedTile != nullptr)
-	{
-		SelectedTile->DrawDebugTileOverride(FVector(0, 0, 2), 0.45f, FColor::White);
-	}
-	if (DestinationTile != nullptr)
-	{
-		DestinationTile->DrawDebugTileOverride(FVector(0, 0, 2), 0.45f, FColor::Purple);
-	}
-	if (SelectedPlayer != nullptr && SelectedPlayer->CurrentTile != nullptr)
-	{
-		SelectedPlayer->CurrentTile->DrawDebugTileOverride(FVector(0, 0, 4), 0.5f, FColor::Green);
-	}
-
-	if (SelectedTile != nullptr && 
-		DestinationTile == nullptr && 
-		MouseTile != nullptr && 
-		MouseTile != SelectedTile)
-	{
-		MouseTile->DrawDebugTileOverride(FVector(0, 0, 2), 0.45f, FColor::Yellow);
-	}
+	DrawDebug(DeltaTime);
 }
 
-UKFBB_FieldTile* AKFBB_CoachPC::GetTileUnderMouse()
+void AKFBB_CoachPC::UpdateDisplayTileUnderMouse()
+{
+	float scalar = DisplayTileUnderMouse ? MouseUnderTileScalar : 0.f;
+	auto MouseTile = GetTileUnderMouse(scalar);
+	if (MouseTile)
+	{
+		DisplayTileUnderMouse = MouseTile;
+	}	
+}
+
+UKFBB_FieldTile* AKFBB_CoachPC::GetTileUnderMouse(float ReqDistFromCenterScale)
 {
 	FVector WorldLoc, WorldDir;
 	if (DeprojectMousePositionToWorld(WorldLoc, WorldDir))
 	{
-		auto MyWorld = GetWorld();
+		MouseWorldLoc = WorldLoc;
+		MouseWorldDir = WorldDir;
+	}
 
-		FHitResult Hit;
-		if (MyWorld->LineTraceSingleByChannel(Hit, WorldLoc, WorldLoc + (WorldDir * 10000.f), ECollisionChannel::ECC_Visibility))
+	auto MyWorld = GetWorld();
+	FHitResult Hit;
+	if (MyWorld->LineTraceSingleByChannel(Hit, MouseWorldLoc, MouseWorldLoc + (MouseWorldDir * 10000.f), ECollisionChannel::ECC_Visibility))
+	{
+		auto HitTile = Cast<UKFBB_FieldTile>(Hit.GetComponent());
+		if (!HitTile || ReqDistFromCenterScale <= 0.f)
 		{
-			return Cast<UKFBB_FieldTile>(Hit.GetComponent());
+			return HitTile;
+		}
+
+		float ReqDistFromCenter = HitTile->GetTileSize() * 0.5f * ReqDistFromCenterScale;
+		float DistFromCenter = (Hit.Location - HitTile->TileLocation).Size2D();
+
+//		DrawDebugCylinder(GetWorld(), HitTile->TileLocation, HitTile->TileLocation, ReqDistFromCenter, 32, (DistFromCenter <= ReqDistFromCenter) ? FColor::Green : FColor::Red);
+//		DrawDebugLine(GetWorld(), HitTile->TileLocation, Hit.Location, FColor::Blue);
+
+		if (DistFromCenter <= ReqDistFromCenter)
+		{
+			return HitTile;
 		}
 	}
+	
 	return nullptr;
 }
 
@@ -77,59 +87,101 @@ void AKFBB_CoachPC::PlayerTouchScreen()
 	UKFBB_FieldTile* Tile = GetTileUnderMouse();
 	AKFBB_PlayerPawn* PlayerOnTile = Tile ? Tile->GetPlayer() : nullptr;
 
-	if (PlayerOnTile && PlayerOnTile != SelectedPlayer)
+	BeginDragTouch(Tile);
+	if (PlayerOnTile)
 	{
 		SetSelectedPlayer(PlayerOnTile);
 	}
-	else if (SelectedPlayer && !PlayerOnTile)
+}
+
+void AKFBB_CoachPC::PlayerUntouchScreen()
+{
+	UKFBB_FieldTile* Tile = GetTileUnderMouse();
+	bool bDidDragPath = StartDragTile && Tile != StartDragTile && SelectedTileList.Num() > 0;
+	if (bDidDragPath)
 	{
-		if (!SelectedTile || Tile != SelectedTile)
-		{
-			SetSelectedTile(Tile);
-		}
-		else if (Tile && Tile == SelectedTile)
+		SetSelectedTile(SelectedTileList.Last());
+	}
+	else if (SelectedPlayer)
+	{
+		bool bOnSelectedTile = SelectedTile && Tile == SelectedTile;
+		bool bOnSelectedPlayer = Tile == SelectedPlayer->CurrentTile;
+		if (bOnSelectedTile)
 		{
 			SetDestinationTile(Tile);
 			ConfirmCommand();
+			SetSelectedPlayer(nullptr);
+		}
+		else if (bOnSelectedPlayer && PrevSelectedPlayer == SelectedPlayer)
+		{
+			SetSelectedPlayer(nullptr);
 		}
 		else
 		{
 			ClearTileSelection();
+			if (!SelectedTile && !bOnSelectedPlayer)
+			{
+				SetSelectedTile(Tile);
+			}
 		}
 	}
 
-/*
-	// If clicked on the same dest tile
-	if (DestinationTile != nullptr && Tile == DestinationTile)
-	{
-		ConfirmCommand();
-	}
-	else if (DestinationTile != nullptr || Tile == nullptr)
-	{
-		ClearTileSelection();
-	}
-	else if (Tile != nullptr)
-	{
-		//DrawDebugTouchedTile(Tile);
+	EndDragTouch(Tile);
+}
 
-		if (SelectedTile == nullptr || SelectedTile->HasPlayer() == false)
+void AKFBB_CoachPC::BeginDragTouch(UKFBB_FieldTile* Tile)
+{
+	StartDragTile = Tile;
+	bIsDragging = true;
+	bIsDraggingPath = Tile->HasPlayer();
+}
+
+void AKFBB_CoachPC::EndDragTouch(UKFBB_FieldTile* Tile)
+{
+	bIsDragging = false;
+	bIsDraggingPath = false;
+	StartDragTile = nullptr;
+}
+
+void AKFBB_CoachPC::CheckDragPath()
+{
+	if (!bIsDraggingPath) { return; }
+
+	auto MouseTile = GetTileUnderMouse(MouseUnderTileScalar);
+	if (!MouseTile) { return; }
+
+	if (MouseTile == StartDragTile) { return; }
+
+	auto LastDragTile = SelectedTileList.Num() ? SelectedTileList.Last() : nullptr;
+	if (MouseTile == LastDragTile) { return; }
+
+	if (LastDragTile && !AKFBB_Field::AreAdjacentTiles(LastDragTile, MouseTile))
+	{
+		while (MouseTile != LastDragTile)
 		{
-			SelectedTile = Tile;
+			FTileDir tileDir = FTileDir::ConvertToTileDir(FVector2D(MouseTile->TileLocation - LastDragTile->TileLocation));
+			LastDragTile = LastDragTile->GetAdjacentTile(tileDir);
+			if (!LastDragTile)
+			{
+				//error
+				break;
+			}
+
+			SelectedTileList.Add(LastDragTile);
 		}
-		else if (SelectedTile == Tile)
-		{
-			ClearTileSelection();
-		}
-		else
-		{
-			SetDestinationTile(Tile);
-		}
-	}*/
+	}
+	else
+	{
+		SelectedTileList.Add(MouseTile);
+	}
 }
 
 void AKFBB_CoachPC::SetSelectedPlayer(AKFBB_PlayerPawn* p)
 {
+	PrevSelectedPlayer = SelectedPlayer;
 	SelectedPlayer = p;
+	// Start fresh making tile selection when switching selected players
+	ClearTileSelection();
 }
 
 void AKFBB_CoachPC::SetSelectedTile(UKFBB_FieldTile* t)
@@ -148,8 +200,21 @@ void AKFBB_CoachPC::ConfirmCommand()
 	auto AI = Cast<AKFBB_AIController>(SelectedPlayer->Controller);
 	if (!AI) { return; }
 
-	if (SelectedPlayer->CanAcceptCommand() &&
-		AI->SetDestinationTile(DestinationTile))
+	bool bSuccess = SelectedPlayer->CanAcceptCommand();
+	if (bSuccess)
+	{
+		bool bHasPath = SelectedTileList.Num() > 1;
+		if (bHasPath)
+		{
+			bSuccess = AI->SetDestinationTile(SelectedTileList);
+		}
+		else
+		{
+			bSuccess = AI->SetDestinationTile(DestinationTile);
+		}
+	}
+
+	if (bSuccess)
 	{
 		SelectedPlayer->SetStatus(EKFBB_PlayerState::Moving);
 	}
@@ -220,6 +285,7 @@ void AKFBB_CoachPC::ClearTileSelection()
 {
 	SelectedTile = nullptr;
 	DestinationTile = nullptr;
+	SelectedTileList.Empty();
 }
 
 void AKFBB_CoachPC::DrawDebugTouchedTile(UKFBB_FieldTile* t)
@@ -232,4 +298,47 @@ void AKFBB_CoachPC::DrawDebugTouchedTile(UKFBB_FieldTile* t)
 	else if (t->bScrimmageLine) color = FColor::Cyan;
 
 	DrawDebugBox(MyWorld, t->TileLocation + FVector(0, 0, 2), FVector(Field->TileSize, Field->TileSize, 0) * 0.5f, color, false, 1.f);
+}
+
+void AKFBB_CoachPC::DrawDebug(float DeltaTime)
+{
+	if (SelectedPlayer != nullptr && SelectedPlayer->CurrentTile != nullptr)
+	{
+		SelectedPlayer->CurrentTile->DrawDebugTileOverride(FVector(0, 0, 4), 0.5f, FColor::Green);
+	}
+
+	if (SelectedTile != nullptr)
+	{
+		if (SelectedTile == DisplayTileUnderMouse && bIsDragging)
+		{
+			DebugFlashSelectedTileTimer -= DeltaTime;
+			if (DebugFlashSelectedTileTimer <= 0)
+			{
+				DebugFlashSelectedTileTimer = 0.5f;
+				bDebugHighlightSelectedTile = !bDebugHighlightSelectedTile;
+			}
+		}
+		else
+		{
+			bDebugHighlightSelectedTile = false;
+		}
+
+		float thickness = bDebugHighlightSelectedTile ? 5.f : 0.f;
+
+		SelectedTile->DrawDebugTileOverride(FVector(0, 0, 2), 0.45f, FColor::White, thickness);
+		
+	}
+	for (int i = 0; i < SelectedTileList.Num(); i++)
+	{
+		SelectedTileList[i]->DrawDebugTileOverride(FVector(0, 0, 2), 0.45f, i == SelectedTileList.Num() - 1 ? FColor::White : FColor::Emerald);
+	}
+	if (DestinationTile != nullptr)
+	{
+		DestinationTile->DrawDebugTileOverride(FVector(0, 0, 2), 0.45f, FColor::Purple);
+	}
+
+	if (DisplayTileUnderMouse != nullptr)
+	{
+		DisplayTileUnderMouse->DrawDebugTileOverride(FVector(0, 0, 2), 0.4f, FColor::Yellow);
+	}
 }

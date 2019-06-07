@@ -82,22 +82,25 @@ bool AKFBB_AIController::CanMoveThruTile(UKFBB_FieldTile* tile) const
 
 bool AKFBB_AIController::SetDestinationTile(UKFBB_FieldTile* DestTile)
 {
+	ClearDestinationTile();
+	if (!DestTile)
+	{
+		return true;
+	}
+
 	auto BB = GetBlackboardComponent();
 	if (!BB) { return false; }
 	auto P = Cast<AKFBB_PlayerPawn>(GetPawn());
 	if (!P) { return false; }
 
 	DestinationTile = DestTile;
-	PathToDestTile.Empty();
-
-	if (!DestinationTile)
+	
+	bool bSuccess = (DestinationTile == P->CurrentTile);
+	if (!bSuccess)
 	{
-		BB->ClearValue(PathSetName);
-		bAbortGridMove = true;
-		return true;
+		bSuccess = GeneratePathToTile(DestinationTile);
 	}
 
-	bool bSuccess = (DestinationTile == P->CurrentTile) || GeneratePathToTile(DestinationTile);
 	if (bSuccess)
 	{
 		BB->SetValueAsBool(PathSetName, true);
@@ -105,6 +108,53 @@ bool AKFBB_AIController::SetDestinationTile(UKFBB_FieldTile* DestTile)
 
 	bAbortGridMove = false;
 	return bSuccess;
+}
+
+bool AKFBB_AIController::SetDestinationTile(TArray<UKFBB_FieldTile*>& ProvidedPath)
+{
+	ClearDestinationTile();
+	if (ProvidedPath.Num() <= 0)
+	{
+		return true;
+	}
+
+	auto BB = GetBlackboardComponent();
+	if (!BB) { return false; }
+	auto P = Cast<AKFBB_PlayerPawn>(GetPawn());
+	if (!P) { return false; }
+
+	DestinationTile = ProvidedPath.Last();
+
+	bool bSuccess = (DestinationTile == P->CurrentTile);
+	if (!bSuccess)
+	{
+		PathToDestTile = ProvidedPath;
+
+		//todo verify path provided are adjacent files
+
+		bSuccess = true;
+	}
+
+	if (bSuccess)
+	{
+		BB->SetValueAsBool(PathSetName, true);
+	}
+
+	bAbortGridMove = false;
+	return bSuccess;
+}
+
+void AKFBB_AIController::ClearDestinationTile()
+{
+	DestinationTile = nullptr;
+	PathToDestTile.Empty();
+	bAbortGridMove = true;
+
+	auto BB = GetBlackboardComponent();
+	if (BB) 
+	{ 
+		BB->ClearValue(PathSetName); 
+	}
 }
 
 bool AKFBB_AIController::GeneratePathToTile(UKFBB_FieldTile* DestTile)
@@ -201,8 +251,22 @@ bool AKFBB_AIController::GeneratePathToTile(UKFBB_FieldTile* DestTile)
 
 void AKFBB_AIController::DrawDebugPath() const
 {
+	FVector offset(0, 0, 2);
+	UKFBB_FieldTile* LastTile = nullptr;
 	for (int i = 0; i < PathToDestTile.Num(); i++)
 	{
-		PathToDestTile[i]->DrawDebugTileOverride(FVector(0, 0, 2), 0.25f, FColor::Emerald);
+		auto CurrentTile = PathToDestTile[i];
+		CurrentTile->DrawDebugTileOverride(offset, 0.25f, FColor::Emerald);
+		if (LastTile != nullptr)
+		{
+			DrawDebugLine(GetWorld(), LastTile->TileLocation + offset, CurrentTile->TileLocation + offset, FColor::Emerald);
+		}
+		else
+		{
+			FVector PawnLoc = GetPawn()->GetActorLocation();
+			PawnLoc.Z = CurrentTile->TileLocation.Z;
+			DrawDebugLine(GetWorld(), PawnLoc + offset, CurrentTile->TileLocation + offset, FColor::Emerald);
+		}
+		LastTile = PathToDestTile[i];
 	}
 }

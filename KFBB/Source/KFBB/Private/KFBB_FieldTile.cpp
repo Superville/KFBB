@@ -107,9 +107,19 @@ AKFBB_Ball* UKFBB_FieldTile::GetBall() const
 	return nullptr;
 }
 
+UKFBB_FieldTile* UKFBB_FieldTile::GetAdjacentTile(FTileDir dir)
+{
+	return Field != nullptr ? Field->GetAdjacentTile(this, dir) : nullptr;
+}
+
 FVector UKFBB_FieldTile::GetTileSize2D() const
 {
 	return Field != nullptr ? FVector(Field->TileSize, Field->TileSize, 0.f) : FVector::ZeroVector;
+}
+
+float UKFBB_FieldTile::GetTileSize() const
+{
+	return Field != nullptr ? Field->TileSize : 0.f;
 }
 
 void UKFBB_FieldTile::DrawCooldownTimer(float Duration, float TimeRemaining, FColor DrawColor)
@@ -156,14 +166,14 @@ void UKFBB_FieldTile::DrawDebugTile(FVector offset) const
 	}
 }
 
-void UKFBB_FieldTile::DrawDebugTileOverride(FVector offset, float scale, FColor c) const
+void UKFBB_FieldTile::DrawDebugTileOverride(FVector offset, float scale, FColor c, float thickness) const
 {
 	if (Field == nullptr)
 		return;
 
 	auto MyWorld = Field->GetWorld();
 
-	DrawDebugBox(MyWorld, TileLocation + offset, FVector(Field->TileSize, Field->TileSize, 0) * scale, c);
+	DrawDebugBox(MyWorld, TileLocation + offset, FVector(Field->TileSize, Field->TileSize, 0) * scale, c, false, -1.f, 0, thickness);
 }
 
 FColor UKFBB_FieldTile::GetDebugColor() const

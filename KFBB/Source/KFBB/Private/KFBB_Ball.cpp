@@ -65,9 +65,6 @@ void AKFBB_Ball::RegisterWithField()
 
 		if (MyWorld->LineTraceSingleByChannel(Hit, Loc, Loc + FVector(0, 0, -1000), ECollisionChannel::ECC_FieldTrace, CollisionParams))
 		{
-			//test
-			auto hc = Hit.GetComponent();
-
 			UKFBB_FieldTile* Tile = Cast<UKFBB_FieldTile>(Hit.GetComponent());
 			RegisterWithTile(Tile);
 
