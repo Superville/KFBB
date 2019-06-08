@@ -36,12 +36,13 @@ public:
 	UPROPERTY(BlueprintReadonly)
 	TArray<UKFBB_FieldTile*> PathToDestTile;
 
-	virtual bool SetDestinationTile(UKFBB_FieldTile* DestTile);
-	virtual bool SetDestinationTile(TArray<UKFBB_FieldTile*>& ProvidedPath);
-	virtual void ClearDestinationTile();
+	virtual bool SetDestination(UKFBB_FieldTile* DestTile);
+	virtual bool SetDestination(TArray<UKFBB_FieldTile*>& ProvidedPath);
+	virtual bool ConfirmMoveToDestinationTile();
+	virtual void ClearDestination();
 
-	void ClearPathing();
-	bool GeneratePathToTile(UKFBB_FieldTile* DestTile);
+	void ClearPathing(TArray<UKFBB_FieldTile*>& out_PathList);
+	bool GeneratePathToTile(UKFBB_FieldTile* StartTile, UKFBB_FieldTile* DestTile, TArray<UKFBB_FieldTile*>& out_PathList, int MaxPathLength = 0);
 	float GetPathGlobalCost(UKFBB_FieldTile* curr, UKFBB_FieldTile* next) const;
 	float GetPathHeuristicCost(UKFBB_FieldTile* dest, UKFBB_FieldTile* next) const;
 	bool CanMoveThruTile(UKFBB_FieldTile* tile) const;

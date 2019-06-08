@@ -10,6 +10,7 @@
 #include "KFBB_Field.h"
 #include "KFBB_FieldTile.h"
 #include "Navigation/GridPathFollowingComponent.h"
+#include "Player/KFBBAttributeSet.h"
 
 AKFBB_AIController::AKFBB_AIController(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer.SetDefaultSubobjectClass<UGridPathFollowingComponent>(TEXT("PathFollowingComponent")))
@@ -32,9 +33,9 @@ AKFBB_Field* AKFBB_AIController::GetField() const
 	return nullptr;
 }
 
-void AKFBB_AIController::ClearPathing()
+void AKFBB_AIController::ClearPathing(TArray<UKFBB_FieldTile*>& out_PathList)
 {
-	PathToDestTile.Empty();
+	out_PathList.Empty();
 
 	AKFBB_Field* Field = GetField();
 	if (Field == nullptr)
@@ -80,39 +81,38 @@ bool AKFBB_AIController::CanMoveThruTile(UKFBB_FieldTile* tile) const
 	return true;
 }
 
-bool AKFBB_AIController::SetDestinationTile(UKFBB_FieldTile* DestTile)
+bool AKFBB_AIController::SetDestination(UKFBB_FieldTile* DestTile)
 {
-	ClearDestinationTile();
-	if (!DestTile)
-	{
-		return true;
-	}
+	ClearDestination();
 
-	auto BB = GetBlackboardComponent();
-	if (!BB) { return false; }
 	auto P = Cast<AKFBB_PlayerPawn>(GetPawn());
-	if (!P) { return false; }
+	if (!P || !DestTile) { return false; }
 
 	DestinationTile = DestTile;
 	
-	bool bSuccess = (DestinationTile == P->CurrentTile);
-	if (!bSuccess)
-	{
-		bSuccess = GeneratePathToTile(DestinationTile);
-	}
+	if (DestinationTile == P->CurrentTile) { return true; }
 
-	if (bSuccess)
-	{
-		BB->SetValueAsBool(PathSetName, true);
-	}
+	int MaxPathLength = P->AttribSet ? P->AttribSet->Stat_Movement.GetCurrentValue() + 1 : 0;
+	bool bSuccess = GeneratePathToTile(P->CurrentTile, DestinationTile, PathToDestTile);
+	bSuccess = bSuccess && PathToDestTile.Num() <= MaxPathLength;
 
-	bAbortGridMove = false;
 	return bSuccess;
 }
 
-bool AKFBB_AIController::SetDestinationTile(TArray<UKFBB_FieldTile*>& ProvidedPath)
+bool AKFBB_AIController::ConfirmMoveToDestinationTile()
 {
-	ClearDestinationTile();
+	auto BB = GetBlackboardComponent();
+	if (!BB) { return false; }
+
+	BB->SetValueAsBool(PathSetName, true);
+
+	bAbortGridMove = false;
+	return true;
+}
+
+bool AKFBB_AIController::SetDestination(TArray<UKFBB_FieldTile*>& ProvidedPath)
+{
+	ClearDestination();
 	if (ProvidedPath.Num() <= 0)
 	{
 		return true;
@@ -144,7 +144,7 @@ bool AKFBB_AIController::SetDestinationTile(TArray<UKFBB_FieldTile*>& ProvidedPa
 	return bSuccess;
 }
 
-void AKFBB_AIController::ClearDestinationTile()
+void AKFBB_AIController::ClearDestination()
 {
 	DestinationTile = nullptr;
 	PathToDestTile.Empty();
@@ -157,20 +157,20 @@ void AKFBB_AIController::ClearDestinationTile()
 	}
 }
 
-bool AKFBB_AIController::GeneratePathToTile(UKFBB_FieldTile* DestTile)
+bool AKFBB_AIController::GeneratePathToTile(UKFBB_FieldTile* StartTile, UKFBB_FieldTile* DestTile, TArray<UKFBB_FieldTile*>& out_PathList, int MaxPathLength)
 {
 	AKFBB_Field* Field = GetField();
 	if (Field == nullptr)
 		return false;
 
-	UKFBB_FieldTile* CurrentTile = MyPlayerPawn->CurrentTile;
+	UKFBB_FieldTile* CurrentTile = StartTile;
 	if (CurrentTile == nullptr)
 		return false;
 
 	if (DestTile == nullptr)
 		return false;
 
-	ClearPathing();
+	ClearPathing(out_PathList);
 
 	TArray<UKFBB_FieldTile*> ClosedSet;
 	TArray<UKFBB_FieldTile*> OpenSet;
@@ -241,9 +241,17 @@ bool AKFBB_AIController::GeneratePathToTile(UKFBB_FieldTile* DestTile)
 		UKFBB_FieldTile* buildTile = DestTile;
 		while (buildTile != nullptr)
 		{
-			PathToDestTile.Insert(buildTile, 0);
+			out_PathList.Insert(buildTile, 0);
 			buildTile = buildTile->pathPrevTile;
-		}		
+		}
+
+		if (MaxPathLength > 0 && out_PathList.Num() > (MaxPathLength + 1))
+		{
+			int removeIdx = (MaxPathLength + 1);
+			int removeCnt = out_PathList.Num() - removeIdx;
+			out_PathList.RemoveAt(removeIdx, removeCnt);
+		}
+
 		return true;
 	}
 	return false;

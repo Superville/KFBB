@@ -7,6 +7,7 @@
 #include "KFBB_CoachPC.generated.h"
 
 class AKFBB_PlayerPawn;
+class AKFBB_AIController;
 class AKFBB_Field;
 class UKFBB_Field_Tile;
 class AKFBB_Ball;
@@ -72,9 +73,12 @@ public:
 	UPROPERTY(BlueprintReadonly)
 	UKFBB_FieldTile* DestinationTile;
 	UPROPERTY(BlueprintReadonly)
+	AKFBB_AIController* SelectedAI;
+	UPROPERTY(BlueprintReadonly)
 	AKFBB_PlayerPawn* SelectedPlayer;
 	UPROPERTY(BlueprintReadonly)
 	AKFBB_PlayerPawn* PrevSelectedPlayer;
+
 
 	UPROPERTY(EditDefaultsOnly)
 	TSubclassOf<AKFBB_PlayerPawn> PlayerClass;

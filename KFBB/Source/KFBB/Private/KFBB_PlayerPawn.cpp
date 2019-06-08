@@ -217,7 +217,7 @@ void AKFBB_PlayerPawn::NotifyReachedGrid()
 		{
 			FumbleBall();
 		}
-		AI->ClearDestinationTile();
+		AI->ClearDestination();
 	}
 }
 
@@ -231,7 +231,7 @@ void AKFBB_PlayerPawn::NotifyReachedDestinationGrid()
 		SetStatus(EKFBB_PlayerState::Exhausted);
 	}
 
-	AI->ClearDestinationTile();
+	AI->ClearDestination();
 }
 
 void AKFBB_PlayerPawn::NotifyHit(class UPrimitiveComponent* MyComp, AActor* Other, class UPrimitiveComponent* OtherComp, bool bSelfMoved, FVector HitLocation, FVector HitNormal, FVector NormalImpulse, const FHitResult& Hit)
@@ -251,7 +251,7 @@ void AKFBB_PlayerPawn::KnockDown(FTileDir dir)
 	auto AI = Cast<AKFBB_AIController>(Controller);
 	if (AI != nullptr)
 	{
-		AI->SetDestinationTile(Field->GetAdjacentTile(CurrentTile, dir));
+		AI->SetDestination(Field->GetAdjacentTile(CurrentTile, dir));
 	}
 
 	SetStatus(EKFBB_PlayerState::KnockedDown);
@@ -283,7 +283,7 @@ void AKFBB_PlayerPawn::SetStatus(EKFBB_PlayerState::Type newStatus)
 	case EKFBB_PlayerState::Ready:
 		break;
 	case EKFBB_PlayerState::GrabBall:
-		AI->SetDestinationTile(nullptr);
+		AI->SetDestination(nullptr);
 		break;
 	}
 	
