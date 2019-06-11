@@ -24,6 +24,7 @@ class KFBB_API AKFBB_CoachPC : public APlayerController
 
 	virtual void SetSelectedPlayer(AKFBB_PlayerPawn* p);
 	virtual void SetSelectedTile(UKFBB_FieldTile* t);
+	virtual void SetSelectedTile(TArray<UKFBB_FieldTile*>& ProvidedPath);
 	virtual void SetDestinationTile(UKFBB_FieldTile* t);
 	virtual void ConfirmCommand();
 

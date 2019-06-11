@@ -99,6 +99,29 @@ bool AKFBB_AIController::SetDestination(UKFBB_FieldTile* DestTile)
 	return bSuccess;
 }
 
+bool AKFBB_AIController::SetDestination(TArray<UKFBB_FieldTile*>& ProvidedPath)
+{
+	ClearDestination();
+
+	auto P = Cast<AKFBB_PlayerPawn>(GetPawn());
+	if (!P || ProvidedPath.Num() <= 0)	{ return false; }
+
+	DestinationTile = ProvidedPath.Last();
+
+	bool bSuccess = (DestinationTile == P->CurrentTile);
+	if (!bSuccess)
+	{
+		int MaxPathLength = P->AttribSet ? P->AttribSet->Stat_Movement.GetCurrentValue() + 1 : 0;
+		PathToDestTile = ProvidedPath;
+		bSuccess = bSuccess && PathToDestTile.Num() <= MaxPathLength;
+
+		//todo verify path provided are adjacent files
+	}
+
+	return bSuccess;
+}
+
+
 bool AKFBB_AIController::ConfirmMoveToDestinationTile()
 {
 	auto BB = GetBlackboardComponent();
@@ -108,40 +131,6 @@ bool AKFBB_AIController::ConfirmMoveToDestinationTile()
 
 	bAbortGridMove = false;
 	return true;
-}
-
-bool AKFBB_AIController::SetDestination(TArray<UKFBB_FieldTile*>& ProvidedPath)
-{
-	ClearDestination();
-	if (ProvidedPath.Num() <= 0)
-	{
-		return true;
-	}
-
-	auto BB = GetBlackboardComponent();
-	if (!BB) { return false; }
-	auto P = Cast<AKFBB_PlayerPawn>(GetPawn());
-	if (!P) { return false; }
-
-	DestinationTile = ProvidedPath.Last();
-
-	bool bSuccess = (DestinationTile == P->CurrentTile);
-	if (!bSuccess)
-	{
-		PathToDestTile = ProvidedPath;
-
-		//todo verify path provided are adjacent files
-
-		bSuccess = true;
-	}
-
-	if (bSuccess)
-	{
-		BB->SetValueAsBool(PathSetName, true);
-	}
-
-	bAbortGridMove = false;
-	return bSuccess;
 }
 
 void AKFBB_AIController::ClearDestination()
@@ -155,6 +144,49 @@ void AKFBB_AIController::ClearDestination()
 	{ 
 		BB->ClearValue(PathSetName); 
 	}
+}
+
+bool AKFBB_AIController::AddToPath(UKFBB_FieldTile* StartTile, UKFBB_FieldTile* DestTile, TArray<UKFBB_FieldTile*>& out_PathList)
+{
+	auto P = Cast<AKFBB_PlayerPawn>(GetPawn());
+	if (!P || !StartTile || !DestTile) { return false; }
+
+	if (StartTile == DestTile) { return true; }
+
+	bool bSuccess = false;
+
+	int DestIdx = out_PathList.Find(DestTile);
+	if (DestIdx >= 0)
+	{
+		// If dest tile is already in our path, clip the path
+		int RemoveIdx = DestIdx + 1;
+		int RemoveCnt = out_PathList.Num() - RemoveIdx;
+		out_PathList.RemoveAt(RemoveIdx, RemoveCnt);
+	}
+	else
+	{
+		TArray<UKFBB_FieldTile*> PathToAdd;
+		int MaxPathLength = P->AttribSet ? P->AttribSet->Stat_Movement.GetCurrentValue() + 1 : 0;
+		bSuccess = GeneratePathToTile(StartTile, DestTile, PathToAdd);
+
+		if (bSuccess)
+		{
+			// If our path has already started to be built
+			if (out_PathList.Num() > 0)
+			{
+				// Srip out the redundant starting tile at the start
+				PathToAdd.RemoveAt(0);
+			}
+
+			out_PathList.Append(PathToAdd);
+			if (out_PathList.Num() > MaxPathLength)
+			{
+				out_PathList.SetNum(MaxPathLength);
+			}
+		}
+	}
+
+	return bSuccess;
 }
 
 bool AKFBB_AIController::GeneratePathToTile(UKFBB_FieldTile* StartTile, UKFBB_FieldTile* DestTile, TArray<UKFBB_FieldTile*>& out_PathList, int MaxPathLength)
