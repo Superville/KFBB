@@ -30,6 +30,7 @@ void AKFBB_CoachPC::Tick(float DeltaTime)
 	CheckDragPath();
 
 	DrawPotentialMoveList();
+	DrawSelectedPlayer();
 
 	DrawDebug(DeltaTime);
 }
@@ -333,7 +334,16 @@ void AKFBB_CoachPC::DrawPotentialMoveList()
 		FVector b = EdgeList[i + 1];
 
 		FVector offset(0, 0, 2);
-		DrawDebugLine(GetWorld(), a + offset, b + offset, FColor::Red, false, -1, 0, 3.f);
+		DrawDebugLine(GetWorld(), a + offset, b + offset, FColor::White, false, -1, 0, 3.f);
+	}
+}
+
+void AKFBB_CoachPC::DrawSelectedPlayer()
+{
+	if (SelectedPlayer != nullptr && SelectedPlayer->CurrentTile != nullptr)
+	{
+		FVector DrawLocation = SelectedPlayer->CurrentTile->TileLocation + FVector(0, 0, 2);
+		DrawDebugCylinder(GetWorld(), DrawLocation, DrawLocation, SelectedPlayer->CurrentTile->GetTileSize() * 0.5f, 32, FColor::White, false, -1, 0, 3.f);
 	}
 }
 
@@ -351,11 +361,6 @@ void AKFBB_CoachPC::DrawDebugTouchedTile(UKFBB_FieldTile* t)
 
 void AKFBB_CoachPC::DrawDebug(float DeltaTime)
 {
-	if (SelectedPlayer != nullptr && SelectedPlayer->CurrentTile != nullptr)
-	{
-		SelectedPlayer->CurrentTile->DrawDebugTileOverride(FVector(0, 0, 4), 0.5f, FColor::Green);
-	}
-
 	if (SelectedTile != nullptr)
 	{
 		float thickness = 0.f;

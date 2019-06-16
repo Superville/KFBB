@@ -74,12 +74,14 @@ public:
 	UKFBB_FieldTile* SelectedTile;
 	UPROPERTY(BlueprintReadonly)
 	UKFBB_FieldTile* DestinationTile;
+	
 	UPROPERTY(BlueprintReadonly)
 	AKFBB_AIController* SelectedAI;
 	UPROPERTY(BlueprintReadonly)
 	AKFBB_PlayerPawn* SelectedPlayer;
 	UPROPERTY(BlueprintReadonly)
 	AKFBB_PlayerPawn* PrevSelectedPlayer;
+	virtual void DrawSelectedPlayer();
 	
 	UPROPERTY(BlueprintReadOnly)
 	TArray<UKFBB_FieldTile*> PotentialMoveList;
