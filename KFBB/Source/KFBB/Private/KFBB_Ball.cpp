@@ -38,8 +38,9 @@ void AKFBB_Ball::Tick(float DeltaTime)
 	if(!IsMoving() && TimeSinceLastFumble() > 1.f)
 	{
 		StopMovement();
+		AdjustBallToTileCenter(DeltaTime);
 	}
-
+	
 	//debug
 	DrawDebugCurrentTile();
 
@@ -166,6 +167,21 @@ void AKFBB_Ball::StopMovement()
 	{
 		smc->SetPhysicsLinearVelocity(FVector::ZeroVector);
 		smc->SetPhysicsAngularVelocityInDegrees(FVector::ZeroVector);
+	}
+}
+
+void AKFBB_Ball::AdjustBallToTileCenter(float DeltaTime)
+{
+	if (CurrentTile != nullptr)
+	{
+		FVector BallLocation = GetActorLocation();
+		FVector BallToTileCenter = (CurrentTile->TileLocation - BallLocation);
+		float DistToTileCenter = BallToTileCenter.Size2D();
+		if (DistToTileCenter > 5.f)
+		{
+			float AdjustToCenterSpeed = 30.f;
+			SetActorLocation(BallLocation + BallToTileCenter.GetSafeNormal2D() * AdjustToCenterSpeed * DeltaTime);
+		}
 	}
 }
 

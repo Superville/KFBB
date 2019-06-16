@@ -50,6 +50,7 @@ public:
 
 	bool IsMoving() const;
 	void StopMovement();
+	void AdjustBallToTileCenter(float DeltaTime);
 	void FumbleBall(UKFBB_FieldTile* DestTile);
 	float TimeSinceLastFumble() const;
 	bool CanBePickedUp() const;
