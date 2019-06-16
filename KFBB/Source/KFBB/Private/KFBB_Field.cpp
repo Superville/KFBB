@@ -253,6 +253,11 @@ TArray<UKFBB_FieldTile*> AKFBB_Field::GetListOfTilesInRange(UKFBB_FieldTile* Sta
 		currRange++;
 	}
 
+	if (ResultList.Num() > 0)
+	{
+		ResultList.Add(StartTile);
+	}
+
 	return ResultList;
 }
 

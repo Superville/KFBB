@@ -39,6 +39,7 @@ public:
 	virtual void BeginDragTouch(UKFBB_FieldTile* Tile);
 	virtual void EndDragTouch(UKFBB_FieldTile* Tile);
 	virtual void CheckDragPath();
+	virtual void AddToPath(UKFBB_FieldTile* Tile);
 	UKFBB_FieldTile* StartDragTile = nullptr;
 	bool bIsDraggingPath = false;
 	bool bIsDragging = false;
