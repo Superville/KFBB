@@ -79,7 +79,11 @@ public:
 	AKFBB_PlayerPawn* SelectedPlayer;
 	UPROPERTY(BlueprintReadonly)
 	AKFBB_PlayerPawn* PrevSelectedPlayer;
-
+	
+	UPROPERTY(BlueprintReadOnly)
+	TArray<UKFBB_FieldTile*> PotentialMoveList;
+	virtual void UpdatePotentialMoveList();
+	virtual void DrawPotentialMoveList();
 
 	UPROPERTY(EditDefaultsOnly)
 	TSubclassOf<AKFBB_PlayerPawn> PlayerClass;

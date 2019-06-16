@@ -221,4 +221,71 @@ FTileDir AKFBB_Field::GetScatterDirection(short centerX, short centerY, int cone
 	return TileDirections[idx];
 }
 
+TArray<UKFBB_FieldTile*> AKFBB_Field::GetListOfTilesInRange(UKFBB_FieldTile* StartTile, int Range)
+{
+	TArray<UKFBB_FieldTile*> ResultList;
+	if (Range <= 0 || !StartTile) { return ResultList; }
+
+	int currRange = 0;
+	TArray<UKFBB_FieldTile*> currList;
+	TArray<UKFBB_FieldTile*> nextList;
+	currList.Add(StartTile);
+
+	while (currRange < Range && currList.Num() > 0)
+	{
+		for (int i = 0; i < currList.Num(); i++)
+		{
+			UKFBB_FieldTile* curr = currList[i];
+			for (int dir = 0; dir < TileDirections.Num(); dir++)
+			{
+				UKFBB_FieldTile* n = GetAdjacentTile(curr, TileDirections[dir]);
+				if (n != nullptr && ResultList.Find(n) == INDEX_NONE)
+				{
+					ResultList.Add(n);
+					nextList.Add(n);
+				}
+			}
+		}
+		
+		currList = nextList;
+		nextList.Empty();
+
+		currRange++;
+	}
+
+	return ResultList;
+}
+
+TArray<FVector> AKFBB_Field::GetExternalEdgeVerts(TArray<UKFBB_FieldTile*>& TileList)
+{
+	TArray<FVector> ResultList;
+	TArray<FVector> currVerts;
+	for (int i = 0; i < TileList.Num(); i++)
+	{
+		UKFBB_FieldTile* curr = TileList[i];
+		if(curr == nullptr) { continue; }
+		// Get tile in each direction
+		for (int j = 0; j < TileDirections.Num(); j++)
+		{
+			FTileDir dir = TileDirections[j];
+			if (!dir.IsCardinalDir()) { continue; }
+
+			UKFBB_FieldTile* neighbor = GetAdjacentTile(curr, dir);
+			// If tile in current direction is NOT in the list
+			if (TileList.Find(neighbor) == INDEX_NONE)
+			{
+				// Add the two verts from the edge of the current tile in that direction
+				if (curr->GetTileVerts(dir, currVerts))
+				{
+					ResultList.Append(currVerts);
+				}
+				
+				currVerts.Empty();
+			}
+		}
+	}
+
+	return ResultList;
+}
+
 

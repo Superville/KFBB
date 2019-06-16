@@ -1,16 +1,19 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 #include "KFBB_CoachPC.h"
-#include "KFBB_Field.h"
-#include "KFBB_FieldTile.h"
 
-#include "KFBB_PlayerPawn.h"
-#include "KFBB_AIController.h"
-
+// Engine Includes
 #include "AIController.h"
-#include "KFBB_Ball.h"
 #include "EngineUtils.h"
 #include "DrawDebugHelpers.h"
+
+// KFBB Includes
+#include "KFBB_Field.h"
+#include "KFBB_FieldTile.h"
+#include "KFBB_PlayerPawn.h"
+#include "KFBB_AIController.h"
+#include "Player/KFBBAttributeSet.h"
+#include "KFBB_Ball.h"
 
 void AKFBB_CoachPC::BeginPlay()
 {
@@ -25,6 +28,8 @@ void AKFBB_CoachPC::Tick(float DeltaTime)
 
 	UpdateDisplayTileUnderMouse();
 	CheckDragPath();
+
+	DrawPotentialMoveList();
 
 	DrawDebug(DeltaTime);
 }
@@ -158,6 +163,7 @@ void AKFBB_CoachPC::CheckDragPath()
 	if (bSuccess)
 	{
 		SetSelectedTile(SelectedTileList);
+		UpdatePotentialMoveList();
 	}
 }
 
@@ -166,8 +172,26 @@ void AKFBB_CoachPC::SetSelectedPlayer(AKFBB_PlayerPawn* p)
 	PrevSelectedPlayer = SelectedPlayer;
 	SelectedPlayer = p;
 	SelectedAI = SelectedPlayer ? Cast<AKFBB_AIController>(SelectedPlayer->GetController()) : nullptr;
+	
 	// Start fresh making tile selection when switching selected players
 	ClearTileSelection();
+	
+	UpdatePotentialMoveList();
+}
+
+void AKFBB_CoachPC::UpdatePotentialMoveList()
+{
+	if (SelectedPlayer && Field)
+	{
+		int AvailRange = FMath::FloorToInt(SelectedPlayer->AttribSet->Stat_Movement.GetCurrentValue()) - SelectedTileList.Num();
+		if (SelectedTileList.Num() > 0) { AvailRange++; }
+		auto StartTile = SelectedTileList.Num() > 0 ? SelectedTileList.Last() : SelectedPlayer->CurrentTile;
+		PotentialMoveList = Field->GetListOfTilesInRange(StartTile, AvailRange);
+	}
+	else
+	{
+		PotentialMoveList.Empty();
+	}
 }
 
 void AKFBB_CoachPC::SetSelectedTile(UKFBB_FieldTile* t)
@@ -283,6 +307,18 @@ void AKFBB_CoachPC::SpawnBallOnTile(int x, int y)
 	AKFBB_Ball* P = World->SpawnActor<AKFBB_Ball>(BallClass, SpawnTrans, SpawnParams);
 }
 
+void AKFBB_CoachPC::DrawPotentialMoveList()
+{
+	TArray<FVector> EdgeList = Field->GetExternalEdgeVerts(PotentialMoveList);
+	for (int i = 0; i < EdgeList.Num(); i += 2)
+	{
+		FVector a = EdgeList[i];
+		FVector b = EdgeList[i + 1];
+
+		FVector offset(0, 0, 2);
+		DrawDebugLine(GetWorld(), a + offset, b + offset, FColor::Red, false, -1, 0, 3.f);
+	}
+}
 
 void AKFBB_CoachPC::DrawDebugTouchedTile(UKFBB_FieldTile* t)
 {
@@ -338,4 +374,5 @@ void AKFBB_CoachPC::DrawDebug(float DeltaTime)
 	{
 		DisplayTileUnderMouse->DrawDebugTileOverride(FVector(0, 0, 2), 0.4f, FColor::Yellow);
 	}
+
 }

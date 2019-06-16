@@ -72,6 +72,7 @@ public:
 	AKFBB_Ball* GetBall() const;
 
 	UKFBB_FieldTile* GetAdjacentTile(FTileDir dir);
+	bool GetTileVerts(FTileDir dir, TArray<FVector>& out_ResultList);
 
 	UFUNCTION(BlueprintCallable)
 	virtual void DrawCooldownTimer(float Duration, float TimeRemaining, FColor DrawColor);

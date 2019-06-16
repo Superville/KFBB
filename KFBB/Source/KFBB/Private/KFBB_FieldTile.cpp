@@ -112,6 +112,28 @@ UKFBB_FieldTile* UKFBB_FieldTile::GetAdjacentTile(FTileDir dir)
 	return Field != nullptr ? Field->GetAdjacentTile(this, dir) : nullptr;
 }
 
+bool UKFBB_FieldTile::GetTileVerts(FTileDir dir, TArray<FVector>& out_ResultList)
+{
+	if (!Field || !dir.IsCardinalDir())
+	{ 
+		return false; 
+	}
+
+	//todo - store vert offsets from TileLocation at creation time
+	if (dir.x != 0)
+	{
+		out_ResultList.Add(TileLocation + FVector(dir.x * Field->TileSize,  Field->TileSize, 0) * 0.5f);
+		out_ResultList.Add(TileLocation + FVector(dir.x * Field->TileSize, -Field->TileSize, 0) * 0.5f);
+	}
+	else
+	{
+		out_ResultList.Add(TileLocation + FVector( Field->TileSize, dir.y * Field->TileSize, 0) * 0.5f);
+		out_ResultList.Add(TileLocation + FVector(-Field->TileSize, dir.y * Field->TileSize, 0) * 0.5f);
+	}
+
+	return true;
+}
+
 FVector UKFBB_FieldTile::GetTileSize2D() const
 {
 	return Field != nullptr ? FVector(Field->TileSize, Field->TileSize, 0.f) : FVector::ZeroVector;

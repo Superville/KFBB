@@ -14,15 +14,17 @@ struct FTileDir
 {
 	GENERATED_BODY()
 
-	FTileDir() : x(0), y(0) {}
-	FTileDir(short _x, short _y) : x(_x), y(_y) {}
 	short x;
 	short y;
+
+	FTileDir() : x(0), y(0) {}
+	FTileDir(short _x, short _y) : x(_x), y(_y) {}
 
 	FORCEINLINE bool operator==(const FTileDir& V) const { return x == V.x && y == V.y; }
 	FORCEINLINE bool operator!=(const FTileDir& V) const { return x != V.x || y != V.y; }
 
 	static FTileDir ConvertToTileDir(FVector2D v);
+	bool IsCardinalDir() { return !((FMath::Abs(x) != 0 && FMath::Abs(y) != 0) || (x == 0 && y == 0)); }
 };
 
 UCLASS()
@@ -101,6 +103,9 @@ public:
 	UKFBB_FieldTile* GetAdjacentTile(UKFBB_FieldTile* tile, FTileDir dir);
 	static bool AreAdjacentTiles(UKFBB_FieldTile* a, UKFBB_FieldTile* b);
 	FTileDir GetTileDir(UKFBB_FieldTile* a, UKFBB_FieldTile* b);
+
+	TArray<UKFBB_FieldTile*> GetListOfTilesInRange(UKFBB_FieldTile* StartTile, int Range);
+	TArray<FVector> GetExternalEdgeVerts(TArray<UKFBB_FieldTile*>& TileList);
 };
 
 
