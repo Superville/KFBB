@@ -8,6 +8,7 @@
 UKFBBAttributeSet::UKFBBAttributeSet()
 {
 	InitAttribute(Stat_Movement, 6);
+	InitAttribute(Stat_GoForIt, 2);
 	InitAttribute(Stat_Strength, 3);
 	InitAttribute(Stat_Agility, 3);
 	InitAttribute(Stat_Armor, 8);

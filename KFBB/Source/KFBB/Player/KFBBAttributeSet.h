@@ -20,6 +20,8 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Attributes")
 	FGameplayAttributeData Stat_Movement;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Attributes")
+	FGameplayAttributeData Stat_GoForIt;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Attributes")
 	FGameplayAttributeData Stat_Strength;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Attributes")
 	FGameplayAttributeData Stat_Agility;
