@@ -176,10 +176,24 @@ void AKFBB_CoachPC::AddToPath(UKFBB_FieldTile* Tile)
 {
 	if (!Tile || !SelectedPlayer || !SelectedAI) { return; }
 
-	auto LastDragTile = SelectedTileList.Num() ? SelectedTileList.Last() : SelectedPlayer->CurrentTile;
-	if (Tile == LastDragTile) { return; }
+	if (!SelectedAI->CanMoveThruTile(Tile)) { return; }
 
-	bool bSuccess = SelectedAI->AddToPath(LastDragTile, Tile, SelectedTileList);
+	bool bSuccess = false;
+
+	int TileIdx = SelectedTileList.Find(Tile);
+	if (TileIdx == INDEX_NONE)
+	{
+		auto LastDragTile = SelectedTileList.Num() ? SelectedTileList.Last() : SelectedPlayer->CurrentTile;
+		if (Tile == LastDragTile) { return; }
+
+		bSuccess = SelectedAI->AddToPath(LastDragTile, Tile, SelectedTileList);
+	}
+	else
+	{
+		SelectedTileList.RemoveAt(TileIdx + 1, SelectedTileList.Num() - (TileIdx + 1));
+		bSuccess = true;
+	}
+
 	if (bSuccess)
 	{
 		SetSelectedTile(SelectedTileList);

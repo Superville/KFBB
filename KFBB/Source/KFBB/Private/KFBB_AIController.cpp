@@ -60,25 +60,26 @@ float AKFBB_AIController::GetPathGlobalCost(UKFBB_FieldTile* curr, UKFBB_FieldTi
 float AKFBB_AIController::GetPathHeuristicCost(UKFBB_FieldTile* dest, UKFBB_FieldTile* next) const
 {
 	float cost = (dest->TileLocation - next->TileLocation).SizeSquared2D();
-	if (!CanMoveThruTile(next))
-	{
-		cost += 10000;
-	}
+	
 	return cost;
 }
 
 bool AKFBB_AIController::CanMoveThruTile(UKFBB_FieldTile* tile) const
 {
-	if (tile != nullptr)
+	if (!tile) { return false; }
+
+	bool bSuccess = true;
+
+	auto TilePlayer = tile->GetPlayer();
+	if (TilePlayer && TilePlayer != GetPawn())
 	{
-		if (tile->HasPlayer() && !MyPlayerPawn->bRunThroughPlayers)
-		{
-			//todo should check for enemy player
-			return false;
-		}
+		//todo check to see if player is friendly... if friendly, don't allow run through
+		// if opponent, allow run through?
+
+		bSuccess = false;
 	}
 
-	return true;
+	return bSuccess;
 }
 
 bool AKFBB_AIController::SetDestination(UKFBB_FieldTile* DestTile)
@@ -174,7 +175,7 @@ bool AKFBB_AIController::AddToPath(UKFBB_FieldTile* StartTile, UKFBB_FieldTile* 
 			// If our path has already started to be built
 			if (out_PathList.Num() > 0)
 			{
-				// Srip out the redundant starting tile at the start
+				// Strip out the redundant starting tile at the start
 				PathToAdd.RemoveAt(0);
 			}
 
@@ -233,6 +234,11 @@ bool AKFBB_AIController::GeneratePathToTile(UKFBB_FieldTile* StartTile, UKFBB_Fi
 				neighbor->pathPrevTile = curr;
 				bFoundPath = true;
 				break;
+			}
+
+			if (!CanMoveThruTile(neighbor))
+			{
+				continue;
 			}
 
 			float globalCost = GetPathGlobalCost(curr, neighbor);
