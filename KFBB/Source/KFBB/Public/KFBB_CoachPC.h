@@ -63,7 +63,7 @@ public:
 	AKFBB_PlayerPawn* GetSelectedPlayer() const;
 
 	UFUNCTION(BlueprintCallable)
-	void ClearTileSelection();
+	void ClearTileSelection(bool bClearAI = true);
 
 	UPROPERTY(BlueprintReadonly)
 	AKFBB_Field* Field;
@@ -93,9 +93,12 @@ public:
 	UPROPERTY(EditDefaultsOnly)
 	TSubclassOf<AKFBB_Ball> BallClass;
 
-
 	UPROPERTY(EditDefaultsOnly)
 	float PlayerSpawnOffsetZ;
+
+	UFUNCTION(BlueprintCallable, Category = "KFBB")
+	uint8 GetTeamID();
+	uint8 TeamID = 255;
 
 
 	//debug

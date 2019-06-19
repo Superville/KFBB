@@ -123,6 +123,12 @@ public:
 
 	UPROPERTY(BlueprintReadOnly)
 	AKFBB_CoachPC* Coach;
+	UFUNCTION(BlueprintCallable, Category = "KFBB")
+	void SetCoach(AKFBB_CoachPC* inCoach);
+	UFUNCTION(BlueprintImplementableEvent, Category = "KFBB", meta=(DisplayName="UpdateTeamColor"))
+	void BP_UpdateTeamColor();
+	bool CanBeSelected(AKFBB_CoachPC* inCoach) const;
+
 	UPROPERTY(BlueprintReadOnly)
 	AKFBB_Field *Field;
 	UPROPERTY(BlueprintReadOnly)
@@ -197,11 +203,10 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "PlayerData")
 	UKFBBAttributeSet* AttribSet;
 
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PlayerSettings")
-	bool bRunThroughPlayers;
-
 	void LoadAttributesFromPlayerData(const FKFBB_PlayerData& data);
 	UFUNCTION(BlueprintCallable)
 	void LoadAttributesByDataName(FString RowName);
+
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "KFBB")
+	uint8 GetTeamID() const;
 };

@@ -77,6 +77,19 @@ void AKFBB_PlayerPawn::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
 }
 
+void AKFBB_PlayerPawn::SetCoach(AKFBB_CoachPC* inCoach)
+{
+	Coach = inCoach;
+	BP_UpdateTeamColor();
+}
+
+bool AKFBB_PlayerPawn::CanBeSelected(AKFBB_CoachPC* inCoach) const
+{
+	if (inCoach != Coach) { return false; }
+	if (Status == EKFBB_PlayerState::Moving) { return false; }
+	return true;
+}
+
 void AKFBB_PlayerPawn::RegisterWithField()
 {
 	auto MyWorld = GetWorld();
@@ -184,10 +197,8 @@ FColor AKFBB_PlayerPawn::GetCooldownColor() const
 
 bool AKFBB_PlayerPawn::CanAcceptCommand()
 {
-	if (IsPlayerOnCooldown())
-	{
-		return false;
-	}
+	if (IsPlayerOnCooldown()) { return false; }
+	if (Status == EKFBB_PlayerState::Moving) { return false; }
 
 	return true;
 }
@@ -450,4 +461,13 @@ void AKFBB_PlayerPawn::LoadAttributesByDataName(FString RowName)
 			LoadAttributesFromPlayerData(*r);
 		}
 	}
+}
+
+uint8 AKFBB_PlayerPawn::GetTeamID() const
+{
+	if (Coach)
+	{
+		return Coach->GetTeamID();
+	}
+	return 255;
 }

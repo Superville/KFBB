@@ -3,6 +3,7 @@
 #include "KFBB_CoachPC.h"
 
 // Engine Includes
+#include "Engine.h"
 #include "AIController.h"
 #include "EngineUtils.h"
 #include "DrawDebugHelpers.h"
@@ -93,7 +94,10 @@ void AKFBB_CoachPC::PlayerTouchScreen()
 	UKFBB_FieldTile* Tile = GetTileUnderMouse();
 	AKFBB_PlayerPawn* PlayerOnTile = Tile ? Tile->GetPlayer() : nullptr;
 
-	BeginDragTouch(Tile);
+	if (!PlayerOnTile || PlayerOnTile->CanAcceptCommand())
+	{
+		BeginDragTouch(Tile);
+	}
 	if (PlayerOnTile)
 	{
 		SetSelectedPlayer(PlayerOnTile);
@@ -109,7 +113,7 @@ void AKFBB_CoachPC::PlayerUntouchScreen()
 	{
 		bool bOnSelectedTile = SelectedTile && Tile == SelectedTile;
 		bool bOnSelectedPlayer = Tile == SelectedPlayer->CurrentTile;
-		if (bOnSelectedTile)
+		if (bOnSelectedTile && !bOnSelectedPlayer)
 		{
 			SetDestinationTile(Tile);
 			ConfirmCommand();
@@ -119,7 +123,7 @@ void AKFBB_CoachPC::PlayerUntouchScreen()
 		{
 			SetSelectedPlayer(nullptr);
 		}
-		else
+		else if(!bOnSelectedPlayer && SelectedPlayer && SelectedPlayer->CanAcceptCommand())
 		{
 			if (PotentialMoveList.Find(Tile) == INDEX_NONE)
 			{
@@ -206,14 +210,17 @@ void AKFBB_CoachPC::SetSelectedPlayer(AKFBB_PlayerPawn* p)
 	SelectedPlayer = p;
 	SelectedAI = SelectedPlayer ? Cast<AKFBB_AIController>(SelectedPlayer->GetController()) : nullptr;
 	
-	// Start fresh making tile selection when switching selected players
-	ClearTileSelection();
+	if (SelectedPlayer && SelectedPlayer->CanBeSelected(this))
+	{
+		// Start fresh making tile selection when switching selected players
+		ClearTileSelection();
+	}
 }
 
 void AKFBB_CoachPC::UpdatePotentialMoveList()
 {
 	PotentialMoveList.Empty();
-	if (SelectedPlayer && Field)
+	if (SelectedPlayer && SelectedPlayer->CanAcceptCommand() && Field)
 	{
 		int AvailRange = FMath::FloorToInt(SelectedPlayer->AttribSet->Stat_Movement.GetCurrentValue()) - SelectedTileList.Num();
 		if (SelectedTileList.Num() > 0) { AvailRange++; }
@@ -253,13 +260,13 @@ void AKFBB_CoachPC::SetDestinationTile(UKFBB_FieldTile* t)
 	DestinationTile = t;
 }
 
-void AKFBB_CoachPC::ClearTileSelection()
+void AKFBB_CoachPC::ClearTileSelection(bool bClearAI)
 {
 	SelectedTile = nullptr;
 	DestinationTile = nullptr;
 	SelectedTileList.Empty();
 
-	if (SelectedAI)
+	if (SelectedAI && bClearAI)
 	{
 		SelectedAI->ClearDestination();
 	}
@@ -275,10 +282,12 @@ void AKFBB_CoachPC::ConfirmCommand()
 	{
 		SelectedAI->ConfirmMoveToDestinationTile();
 		SelectedPlayer->SetStatus(EKFBB_PlayerState::Moving);
+		ClearTileSelection(false);
 	}
 	else
 	{
 		SelectedPlayer->NotifyCommandFailed();
+		ClearTileSelection();
 	}
 }
 
@@ -308,7 +317,10 @@ void AKFBB_CoachPC::SpawnPlayerOnTile(int x, int y)
 	SpawnParams.bNoFail = true;
 
 	AKFBB_PlayerPawn* P = World->SpawnActor<AKFBB_PlayerPawn>(PlayerClass, SpawnTrans, SpawnParams);
-	P->Coach = this;
+	if (P)
+	{
+		P->SetCoach(this);
+	}
 }
 
 void AKFBB_CoachPC::SpawnBallOnTile()
@@ -356,8 +368,9 @@ void AKFBB_CoachPC::DrawSelectedPlayer()
 {
 	if (SelectedPlayer != nullptr && SelectedPlayer->CurrentTile != nullptr)
 	{
-		FVector DrawLocation = SelectedPlayer->CurrentTile->TileLocation + FVector(0, 0, 2);
-		DrawDebugCylinder(GetWorld(), DrawLocation, DrawLocation, SelectedPlayer->CurrentTile->GetTileSize() * 0.5f, 32, FColor::White, false, -1, 0, 3.f);
+		FVector DrawLocation = SelectedPlayer->GetActorLocation() + FVector(0, 0, -48);
+		float Radius = SelectedPlayer->CurrentTile->GetTileSize() * 0.5f;
+		DrawDebugCylinder(GetWorld(), DrawLocation, DrawLocation, Radius, 32, FColor::White, false, -1, 0, 3.f);
 	}
 }
 
@@ -371,6 +384,11 @@ void AKFBB_CoachPC::DrawDebugTouchedTile(UKFBB_FieldTile* t)
 	else if (t->bScrimmageLine) color = FColor::Cyan;
 
 	DrawDebugBox(MyWorld, t->TileLocation + FVector(0, 0, 2), FVector(Field->TileSize, Field->TileSize, 0) * 0.5f, color, false, 1.f);
+}
+
+uint8 AKFBB_CoachPC::GetTeamID()
+{
+	return TeamID;
 }
 
 void AKFBB_CoachPC::DrawDebug(float DeltaTime)
