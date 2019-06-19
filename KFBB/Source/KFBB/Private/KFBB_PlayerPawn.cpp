@@ -6,6 +6,7 @@
 #include "DrawDebugHelpers.h"
 #include "Components/StaticMeshComponent.h"
 #include "Engine/CollisionProfile.h"
+#include "AbilitySystemComponent.h"
 
 // KFBB Includes
 #include "KFBB_AIController.h"
@@ -33,6 +34,24 @@ AKFBB_PlayerPawn::AKFBB_PlayerPawn()
 
 
 	AttribSet = CreateDefaultSubobject<UKFBBAttributeSet>(FName("AttribSet"));
+	AbilitySystemComponent = CreateDefaultSubobject<UAbilitySystemComponent>(FName("AbilitySystemComp"));
+}
+
+UAbilitySystemComponent* AKFBB_PlayerPawn::GetAbilitySystemComponent() const
+{
+	return AbilitySystemComponent;
+}
+
+void AKFBB_PlayerPawn::GrantAbility(TSubclassOf<UGameplayAbility> Ability)
+{
+	if (AbilitySystemComponent && Ability&& HasAuthority())
+	{
+		FGameplayAbilitySpecDef SpecDef = FGameplayAbilitySpecDef();
+		SpecDef.Ability = Ability;
+		FGameplayAbilitySpec AbilitySpec = FGameplayAbilitySpec(SpecDef, 1);
+		AbilitySystemComponent->GiveAbility(AbilitySpec);
+		AbilitySystemComponent->InitAbilityActorInfo(this, this);
+	}	
 }
 
 // Called when the game starts or when spawned
@@ -198,7 +217,10 @@ FColor AKFBB_PlayerPawn::GetCooldownColor() const
 bool AKFBB_PlayerPawn::CanAcceptCommand()
 {
 	if (IsPlayerOnCooldown()) { return false; }
-	if (Status == EKFBB_PlayerState::Moving) { return false; }
+	if (AbilitySystemComponent)
+	{
+		if (AbilitySystemComponent->GetTagCount(ProhibitCommandsTag) > 0) { return false; }
+	}
 
 	return true;
 }
@@ -212,23 +234,19 @@ void AKFBB_PlayerPawn::NotifyCommandFailed()
 
 void AKFBB_PlayerPawn::NotifyReachedGrid()
 {
-	if (!CurrentTile) return;
 	auto BallOnTile = CurrentTile->GetBall();
-	if (!BallOnTile) { return; }
-	auto AI = Cast<AKFBB_AIController>(GetController());
-	if (!AI) { return; }
-
-	if (!BallOnTile->IsPossessed())
+	if (BallOnTile && AbilitySystemComponent)
 	{
-		if (CanPickupBall(BallOnTile) && TryPickupBall())
+		if (AbilitySystemComponent->GetTagCount(HasBallTag) == 0 &&
+			BallOnTile->CanBePickedUp())
 		{
-			ClaimBall();
+			AbilitySystemComponent->TryActivateAbilitiesByTag(FGameplayTagContainer(TriggerPickupAbilityTag));
+			auto AI = Cast<AKFBB_AIController>(GetController());
+			if (AI)
+			{
+				AI->ClearDestination();
+			}
 		}
-		else
-		{
-			FumbleBall();
-		}
-		AI->ClearDestination();
 	}
 }
 
@@ -332,58 +350,40 @@ bool AKFBB_PlayerPawn::TryPickupBall() const
 	return (roll >= chance);
 }
 
-void AKFBB_PlayerPawn::ClaimBall()
+void AKFBB_PlayerPawn::ClaimBall(AKFBB_Ball* BallToClaim)
 {
-	if (CurrentTile == nullptr || CurrentTile->HasBall() == false)
-	{
-		//error!
-		return;
-	}
+	if (!BallToClaim || !AbilitySystemComponent) { return; }
 
-	Ball = CurrentTile->GetBall();
-	if (Ball != nullptr)
-	{
-		Ball->RegisterWithPlayer(this);
-		AttachBall();
-		SetStatus(EKFBB_PlayerState::GrabBall);
-	}
+	Ball = BallToClaim;
+	Ball->RegisterWithPlayer(this);
+
+	AttachBall(BallToClaim);
 }
 
-void AKFBB_PlayerPawn::AttachBall()
+void AKFBB_PlayerPawn::AttachBall(AKFBB_Ball* BallToAttach)
 {
-	if (Ball != nullptr)
+	if (BallToAttach != nullptr)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("%s AttachBall %s"), *GetName(), *Ball->GetName());
+		UE_LOG(LogTemp, Warning, TEXT("%s AttachBall %s"), *GetName(), *BallToAttach->GetName());
 
-		Ball->BallSMC->SetSimulatePhysics(false);
-		Ball->AttachToComponent(Pill, FAttachmentTransformRules::SnapToTargetNotIncludingScale, FName("BallSocket"));
-
-		SetStatus(EKFBB_PlayerState::Ready);
+		BallToAttach->BallSMC->SetSimulatePhysics(false);
+		BallToAttach->AttachToComponent(Pill, FAttachmentTransformRules::SnapToTargetNotIncludingScale, FName("BallSocket"));
 	}
 }
 
 
-void AKFBB_PlayerPawn::FumbleBall()
+void AKFBB_PlayerPawn::FumbleBall(AKFBB_Ball* BallToFumble)
 {
-	auto b = CurrentTile->GetBall();
-	auto v = b->GetVelocity();
-	if (b->IsMoving())
+	if (!BallToFumble || 
+		!CurrentTile || 
+		!Field || 
+		!AbilitySystemComponent)
 	{
 		return;
 	}
 
-	if (Ball != nullptr)
-	{
-		const FDetachmentTransformRules dtr(EDetachmentRule::KeepWorld, false);
-		Ball->DetachFromActor(dtr);
-		Ball = nullptr;
-	}
 	auto destTile = Field->GetAdjacentTile(CurrentTile, Field->GetScatterDirection(0, 0, 4));
-
-//	auto MyWorld = GetWorld();
-//	UGameplayStatics::SuggestProjectileVelocity(MyWorld,)
-
-	b->FumbleBall(destTile);
+	BallToFumble->FumbleBall(destTile);
 }
 
 void AKFBB_PlayerPawn::DrawDebugPath() const

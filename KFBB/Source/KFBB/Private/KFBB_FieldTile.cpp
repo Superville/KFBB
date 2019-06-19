@@ -201,7 +201,12 @@ void UKFBB_FieldTile::DrawDebugTileOverride(FVector offset, float scale, FColor 
 FColor UKFBB_FieldTile::GetDebugColor() const
 {
 	FColor color = FColor::Green;
-	if (bEndZone) color = FColor::Red;
+	auto Ball = GetBall();
+	if (Ball)
+	{
+		color = Ball->CanBePickedUp() ? FColor::White : FColor::Blue;
+	}	
+	else if (bEndZone) color = FColor::Red;
 	else if (bWideOut) color = FColor::Orange;
 	else if (bScrimmageLine) color = FColor::Cyan;
 	return color;

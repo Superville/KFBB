@@ -4,6 +4,8 @@
 
 #include "CoreMinimal.h"
 #include "Engine/DataTable.h"
+#include "AbilitySystemInterface.h"
+#include "GameplayTags.h"
 #include "GameFramework/Character.h"
 #include "KFBB_PlayerPawn.generated.h"
 
@@ -17,6 +19,8 @@ class UKFBB_FieldTile;
 class AKFBB_CoachPC;
 class AKFBB_Ball;
 class UKFBBAttributeSet;
+class UAbilitySystemComponent;
+class UGameplayAbility;
 
 UENUM(BlueprintType)
 namespace EKFBB_PlayerState
@@ -83,7 +87,7 @@ public:
 
 
 UCLASS()
-class KFBB_API AKFBB_PlayerPawn : public ACharacter
+class KFBB_API AKFBB_PlayerPawn : public ACharacter, public IAbilitySystemInterface
 {
 	GENERATED_BODY()
 
@@ -157,33 +161,38 @@ public:
 	virtual void NotifyHit(UPrimitiveComponent* MyComp, AActor* Other, UPrimitiveComponent* OtherComp, bool bSelfMoved, FVector HitLocation, FVector HitNormal, FVector NormalImpulse, const FHitResult& Hit) override;
 	virtual void KnockDown(FTileDir dir);
 
+	UFUNCTION(BlueprintCallable, Category="KFBB")
 	void SetStatus(EKFBB_PlayerState::Type newStatus);
 
-	UFUNCTION(BlueprintCallable)
+	UFUNCTION(BlueprintCallable, Category = "KFBB")
 	bool IsStatusMoving() { return Status == EKFBB_PlayerState::Moving; }
-	UFUNCTION(BlueprintCallable)
+	UFUNCTION(BlueprintCallable, Category = "KFBB")
 	bool IsStatusExhausted() { return Status == EKFBB_PlayerState::Exhausted; }
-	UFUNCTION(BlueprintCallable)
+	UFUNCTION(BlueprintCallable, Category = "KFBB")
 	bool IsStatusKnockedDown() { return Status == EKFBB_PlayerState::KnockedDown; }
-	UFUNCTION(BlueprintCallable)
+	UFUNCTION(BlueprintCallable, Category = "KFBB")
 	bool IsStatusStunned() { return Status == EKFBB_PlayerState::Stunned; }
-	UFUNCTION(BlueprintCallable)
+	UFUNCTION(BlueprintCallable, Category = "KFBB")
 	bool IsStatusStandingUp() { return Status == EKFBB_PlayerState::StandingUp; }
-	UFUNCTION(BlueprintCallable)
+	UFUNCTION(BlueprintCallable, Category = "KFBB")
 	bool IsStatusReady() { return Status == EKFBB_PlayerState::Ready; }
-	UFUNCTION(BlueprintCallable)
+	UFUNCTION(BlueprintCallable, Category = "KFBB")
 	bool IsGrabbingBall() { return Status == EKFBB_PlayerState::GrabBall; }
 
 
 	AKFBB_Ball* Ball;
 	UFUNCTION(BlueprintCallable)
 	bool HasBall() const;
-	bool CanPickupBall(AKFBB_Ball* ball) const;
-	bool TryPickupBall() const;
-	void ClaimBall();
 	UFUNCTION(BlueprintCallable)
-	void AttachBall();
-	void FumbleBall();
+	bool CanPickupBall(AKFBB_Ball* ball) const;
+	UFUNCTION(BlueprintCallable)
+	bool TryPickupBall() const;
+	UFUNCTION(BlueprintCallable, Category="KFBB")
+	void ClaimBall(AKFBB_Ball* BallToClaim);
+	UFUNCTION(BlueprintCallable, Category = "KFBB")
+	void AttachBall(AKFBB_Ball* BallToAttach);
+	UFUNCTION(BlueprintCallable)
+	void FumbleBall(AKFBB_Ball* BallToFumble);
 
 	UPROPERTY(BlueprintReadOnly)
 	TEnumAsByte<EKFBB_PlayerState::Type> Status;
@@ -202,6 +211,18 @@ public:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "PlayerData")
 	UKFBBAttributeSet* AttribSet;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Abilities", meta = (AllowPrivateAccess = "true"))
+	UAbilitySystemComponent* AbilitySystemComponent = nullptr;
+	UAbilitySystemComponent* GetAbilitySystemComponent() const override;
+	UFUNCTION(BlueprintCallable, Category = "KFBB")
+	void GrantAbility(TSubclassOf<UGameplayAbility> Ability);
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Tags")
+	FGameplayTag ProhibitCommandsTag;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Tags")
+	FGameplayTag TriggerPickupAbilityTag;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Tags")
+	FGameplayTag HasBallTag;
 
 	void LoadAttributesFromPlayerData(const FKFBB_PlayerData& data);
 	UFUNCTION(BlueprintCallable)

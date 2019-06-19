@@ -1,13 +1,17 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 #include "KFBB_Ball.h"
+
+// Engine Includes
+#include "AbilitySystemComponent.h"
+#include "UnrealMathUtility.h"
+#include "DrawDebugHelpers.h"
+
+// KFBB Includes
 #include "KFBB_PlayerPawn.h"
 #include "KFBB_Field.h"
 #include "KFBB_FieldTile.h"
 #include "KFBB.h"
-#include "UnrealMathUtility.h"
-#include "DrawDebugHelpers.h"
-
 #include "KFBB_BallMovementComponent.h"
 
 // Sets default values
@@ -15,6 +19,8 @@ AKFBB_Ball::AKFBB_Ball()
 {
 	BallSMC = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("BallSMC"));
 	SetRootComponent(BallSMC);
+
+	AbilitySystemComponent = CreateDefaultSubobject<UAbilitySystemComponent>(FName("AbilitySystemComp"));
 
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
@@ -35,11 +41,15 @@ void AKFBB_Ball::Tick(float DeltaTime)
 	Super::Tick(DeltaTime);
 
 	RegisterWithField();
-	if(!IsMoving() && TimeSinceLastFumble() > 1.f)
+	if (IsMoving() && TimeSinceLastFumble() > 1.f)
 	{
 		StopMovement();
+	}
+	if(!IsMoving() )
+	{
 		AdjustBallToTileCenter(DeltaTime);
 	}
+	UpdateCanBePickedUp();
 	
 	//debug
 	DrawDebugCurrentTile();
@@ -91,30 +101,33 @@ void AKFBB_Ball::RegisterWithTile(class UKFBB_FieldTile* Tile)
 
 void AKFBB_Ball::RegisterWithPlayer(AKFBB_PlayerPawn* P)
 {
-	if (OwningPlayer != nullptr)
-	{
-		//error!
-		return;
-	}
+	if (!P || !P->AbilitySystemComponent) { return; }
+	if (OwningPlayer) { return; }
 
 	OwningPlayer = P;
 	OwningPlayer->Ball = this;
+
+	OwningPlayer->AbilitySystemComponent->AddLooseGameplayTag(OwningPlayer->HasBallTag);
+	OwningPlayer->AbilitySystemComponent->SetTagMapCount(OwningPlayer->HasBallTag, 1);
 }
 
 void AKFBB_Ball::UnRegisterWithPlayer()
 {
-	if (OwningPlayer == nullptr)
-	{
-		// error!
-		return;
-	}
+	if (OwningPlayer == nullptr || !OwningPlayer->AbilitySystemComponent) { return; }
 
+	OwningPlayer->AbilitySystemComponent->RemoveLooseGameplayTag(OwningPlayer->HasBallTag);
 	OwningPlayer->Ball = nullptr;
 	OwningPlayer = nullptr;
 }
 
 void AKFBB_Ball::FumbleBall(UKFBB_FieldTile* DestTile)
 {
+	UnRegisterWithPlayer();
+
+	const FDetachmentTransformRules dtr(EDetachmentRule::KeepWorld, false);
+	DetachFromActor(dtr);
+	
+
 	if (BallSMC != nullptr)
 	{
 		FVector ballVel = (DestTile->TileLocation - CurrentTile->TileLocation).GetSafeNormal2D() * 100;
@@ -137,7 +150,23 @@ float AKFBB_Ball::TimeSinceLastFumble() const
 
 bool AKFBB_Ball::CanBePickedUp() const
 {
-	return (!IsPossessed() && !IsMoving() && TimeSinceLastFumble() > 1.f);
+	return (AbilitySystemComponent && AbilitySystemComponent->GetTagCount(CanBePickedUpTag) > 0);
+}
+
+void AKFBB_Ball::UpdateCanBePickedUp()
+{
+	if (AbilitySystemComponent)
+	{
+		if (IsPossessed() || IsMoving() || TimeSinceLastFumble() <= 1.f)
+		{
+			AbilitySystemComponent->RemoveLooseGameplayTag(CanBePickedUpTag);
+		}
+		else
+		{
+			AbilitySystemComponent->AddLooseGameplayTag(CanBePickedUpTag);
+			AbilitySystemComponent->SetTagMapCount(CanBePickedUpTag, 1);
+		}
+	}
 }
 
 bool AKFBB_Ball::IsPossessed() const
@@ -183,6 +212,11 @@ void AKFBB_Ball::AdjustBallToTileCenter(float DeltaTime)
 			SetActorLocation(BallLocation + BallToTileCenter.GetSafeNormal2D() * AdjustToCenterSpeed * DeltaTime);
 		}
 	}
+}
+
+UAbilitySystemComponent* AKFBB_Ball::GetAbilitySystemComponent() const
+{
+	return AbilitySystemComponent;
 }
 
 void AKFBB_Ball::DrawDebugCurrentTile() const

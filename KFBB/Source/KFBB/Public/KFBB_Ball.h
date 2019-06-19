@@ -4,11 +4,13 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
+#include "GameplayTags.h"
+#include "AbilitySystemInterface.h"
 #include "KFBB_Ball.generated.h"
 
 
 UCLASS()
-class KFBB_API AKFBB_Ball : public AActor
+class KFBB_API AKFBB_Ball : public AActor, public IAbilitySystemInterface
 {
 	GENERATED_BODY()
 
@@ -48,12 +50,21 @@ public:
 
 	bool IsPossessed() const;
 
+	bool CanBePickedUp() const;
+	void UpdateCanBePickedUp();
 	bool IsMoving() const;
 	void StopMovement();
 	void AdjustBallToTileCenter(float DeltaTime);
 	void FumbleBall(UKFBB_FieldTile* DestTile);
 	float TimeSinceLastFumble() const;
-	bool CanBePickedUp() const;
+	
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Abilities", meta = (AllowPrivateAccess = "true"))
+	UAbilitySystemComponent* AbilitySystemComponent = nullptr;
+	UAbilitySystemComponent* GetAbilitySystemComponent() const override;
+	
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Tags")
+	FGameplayTag CanBePickedUpTag;
 
 	void DrawDebugCurrentTile() const;
 

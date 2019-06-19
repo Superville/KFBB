@@ -353,14 +353,17 @@ void AKFBB_CoachPC::SpawnBallOnTile(int x, int y)
 
 void AKFBB_CoachPC::DrawPotentialMoveList()
 {
-	TArray<FVector> EdgeList = Field->GetExternalEdgeVerts(PotentialMoveList);
-	for (int i = 0; i < EdgeList.Num(); i += 2)
+	if (SelectedPlayer)
 	{
-		FVector a = EdgeList[i];
-		FVector b = EdgeList[i + 1];
+		TArray<FVector> EdgeList = Field->GetExternalEdgeVerts(PotentialMoveList);
+		for (int i = 0; i < EdgeList.Num(); i += 2)
+		{
+			FVector a = EdgeList[i];
+			FVector b = EdgeList[i + 1];
 
-		FVector offset(0, 0, 2);
-		DrawDebugLine(GetWorld(), a + offset, b + offset, FColor::White, false, -1, 0, 3.f);
+			FVector offset(0, 0, 2);
+			DrawDebugLine(GetWorld(), a + offset, b + offset, FColor::White, false, -1, 0, 3.f);
+		}
 	}
 }
 
