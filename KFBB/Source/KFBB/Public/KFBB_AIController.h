@@ -49,6 +49,8 @@ public:
 	bool CanMoveThruTile(UKFBB_FieldTile* tile) const;
 
 	FName PathSetName = FName("bPathSet");
+
+	uint8 GetTeamID() const;
 	
 	void DrawDebugPath() const;
 };

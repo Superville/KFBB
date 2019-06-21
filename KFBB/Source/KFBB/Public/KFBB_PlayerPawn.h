@@ -122,16 +122,16 @@ public:
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(UInputComponent* PlayerInputComponent) override;
 
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, meta = (AllowPrivateAccess = "true"))
 	UStaticMeshComponent* Pill = nullptr;
 
-	UPROPERTY(BlueprintReadOnly)
-	AKFBB_CoachPC* Coach;
-	UFUNCTION(BlueprintCallable, Category = "KFBB")
-	void SetCoach(AKFBB_CoachPC* inCoach);
 	UFUNCTION(BlueprintImplementableEvent, Category = "KFBB", meta=(DisplayName="UpdateTeamColor"))
 	void BP_UpdateTeamColor();
 	bool CanBeSelected(AKFBB_CoachPC* inCoach) const;
+	bool IsMyCoach(AKFBB_CoachPC* inCoach) const;
+	bool IsSameTeam(AKFBB_PlayerPawn* Other) const;
 
 	UPROPERTY(BlueprintReadOnly)
 	AKFBB_Field *Field;
@@ -228,6 +228,15 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void LoadAttributesByDataName(FString RowName);
 
+	UPROPERTY(ReplicatedUsing="OnRep_TeamID")
+	uint8 TeamID = 255;
+	uint8 DisplayTeamID = 255;
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "KFBB")
 	uint8 GetTeamID() const;
+	void SetTeamID(uint8 teamID);
+	UFUNCTION()
+	void OnRep_TeamID();
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "KFBB")
+	uint8 GetDisplayTeamID() const;
+
 };

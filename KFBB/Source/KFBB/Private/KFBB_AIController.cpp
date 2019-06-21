@@ -71,12 +71,9 @@ bool AKFBB_AIController::CanMoveThruTile(UKFBB_FieldTile* tile) const
 	bool bSuccess = true;
 
 	auto TilePlayer = tile->GetPlayer();
-	if (TilePlayer && TilePlayer != GetPawn())
+	if (TilePlayer && TilePlayer != MyPlayerPawn)
 	{
-		//todo check to see if player is friendly... if friendly, don't allow run through
-		// if opponent, allow run through?
-
-		bSuccess = false;
+		bSuccess = !MyPlayerPawn->IsSameTeam(TilePlayer) || TilePlayer->IsStatusMoving();
 	}
 
 	return bSuccess;
@@ -293,6 +290,11 @@ bool AKFBB_AIController::GeneratePathToTile(UKFBB_FieldTile* StartTile, UKFBB_Fi
 		return true;
 	}
 	return false;
+}
+
+uint8 AKFBB_AIController::GetTeamID() const
+{
+	return (MyPlayerPawn ? MyPlayerPawn->GetTeamID() : 255);
 }
 
 void AKFBB_AIController::DrawDebugPath() const

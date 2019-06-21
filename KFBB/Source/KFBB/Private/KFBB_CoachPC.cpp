@@ -15,12 +15,15 @@
 #include "KFBB_AIController.h"
 #include "Player/KFBBAttributeSet.h"
 #include "KFBB_Ball.h"
+#include "KFBBGameModeBase.h"
 
 void AKFBB_CoachPC::BeginPlay()
 {
 	Super::BeginPlay();
 
 	AKFBB_Field::AssignFieldActor(this, Field);
+
+	SetTeamID(0);
 }
 
 void AKFBB_CoachPC::Tick(float DeltaTime)
@@ -117,11 +120,11 @@ void AKFBB_CoachPC::PlayerUntouchScreen()
 		{
 			SetDestinationTile(Tile);
 			ConfirmCommand();
-			SetSelectedPlayer(nullptr);
+			ClearSelectedPlayer();
 		}
 		else if (bOnSelectedPlayer && PrevSelectedPlayer == SelectedPlayer)
 		{
-			SetSelectedPlayer(nullptr);
+			ClearSelectedPlayer();
 		}
 		else if(!bOnSelectedPlayer && SelectedPlayer && SelectedPlayer->CanAcceptCommand())
 		{
@@ -206,15 +209,24 @@ void AKFBB_CoachPC::AddToPath(UKFBB_FieldTile* Tile)
 
 void AKFBB_CoachPC::SetSelectedPlayer(AKFBB_PlayerPawn* p)
 {
-	PrevSelectedPlayer = SelectedPlayer;
-	SelectedPlayer = p;
-	SelectedAI = SelectedPlayer ? Cast<AKFBB_AIController>(SelectedPlayer->GetController()) : nullptr;
-	
-	if (SelectedPlayer && SelectedPlayer->CanBeSelected(this))
+	if (!p) { return; }
+
+	if(p->CanBeSelected(this))
 	{
+		PrevSelectedPlayer = SelectedPlayer;
+		SelectedPlayer = p;
+		SelectedAI = SelectedPlayer ? Cast<AKFBB_AIController>(SelectedPlayer->GetController()) : nullptr;
+	
 		// Start fresh making tile selection when switching selected players
 		ClearTileSelection();
 	}
+}
+
+void AKFBB_CoachPC::ClearSelectedPlayer()
+{
+	PrevSelectedPlayer = SelectedPlayer;
+	SelectedPlayer = nullptr;
+	SelectedAI = nullptr;
 }
 
 void AKFBB_CoachPC::UpdatePotentialMoveList()
@@ -291,7 +303,7 @@ void AKFBB_CoachPC::ConfirmCommand()
 	}
 }
 
-void AKFBB_CoachPC::SpawnPlayerOnTile()
+void AKFBB_CoachPC::SpawnPlayerOnTile(uint8 teamID)
 {
 	int x = 0, y = 0;
 	UKFBB_FieldTile* Tile = GetTileUnderMouse();
@@ -301,10 +313,10 @@ void AKFBB_CoachPC::SpawnPlayerOnTile()
 		y = Tile->TileY;
 	}
 	
-	SpawnPlayerOnTile(x, y);
+	SpawnPlayerOnTile(x, y, teamID);
 }
 
-void AKFBB_CoachPC::SpawnPlayerOnTile(int x, int y)
+void AKFBB_CoachPC::SpawnPlayerOnTile(int x, int y, uint8 teamID)
 {
 	if (PlayerClass == nullptr)
 		return;
@@ -319,7 +331,11 @@ void AKFBB_CoachPC::SpawnPlayerOnTile(int x, int y)
 	AKFBB_PlayerPawn* P = World->SpawnActor<AKFBB_PlayerPawn>(PlayerClass, SpawnTrans, SpawnParams);
 	if (P)
 	{
-		P->SetCoach(this);
+		auto KFGM = Cast<AKFBBGameModeBase>(GetWorld()->GetAuthGameMode());
+		if (KFGM)
+		{
+			KFGM->RegisterTeamMember(P, teamID);
+		}
 	}
 }
 
@@ -392,6 +408,15 @@ void AKFBB_CoachPC::DrawDebugTouchedTile(UKFBB_FieldTile* t)
 uint8 AKFBB_CoachPC::GetTeamID()
 {
 	return TeamID;
+}
+
+void AKFBB_CoachPC::SetTeamID(uint8 teamID)
+{
+	auto KBGM = Cast<AKFBBGameModeBase>(GetWorld()->GetAuthGameMode());
+	if (KBGM)
+	{
+		KBGM->RegisterCoach(this, teamID);
+	}
 }
 
 void AKFBB_CoachPC::DrawDebug(float DeltaTime)

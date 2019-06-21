@@ -3,6 +3,7 @@
 #include "KFBB_PlayerPawn.h"
 
 // Engine Includes
+#include "Net/UnrealNetwork.h"
 #include "DrawDebugHelpers.h"
 #include "Components/StaticMeshComponent.h"
 #include "Engine/CollisionProfile.h"
@@ -18,6 +19,7 @@
 #include "KFBB_BallMovementComponent.h"
 #include "KFBBGameModeBase.h"
 #include "Player/KFBBAttributeSet.h"
+#include "Game/KFBB_TeamInfo.h"
 
 // Sets default values
 AKFBB_PlayerPawn::AKFBB_PlayerPawn()
@@ -96,18 +98,40 @@ void AKFBB_PlayerPawn::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
 }
 
-void AKFBB_PlayerPawn::SetCoach(AKFBB_CoachPC* inCoach)
+void AKFBB_PlayerPawn::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
-	Coach = inCoach;
-	BP_UpdateTeamColor();
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	DOREPLIFETIME(AKFBB_PlayerPawn, TeamID);
+}
+
+bool AKFBB_PlayerPawn::IsMyCoach(AKFBB_CoachPC* inCoach) const
+{
+	auto KFGM = Cast<AKFBBGameModeBase>(GetWorld()->GetAuthGameMode());
+	if (KFGM)
+	{
+		auto TeamInfo = KFGM->GetTeamInfoByID(GetTeamID());
+		if (TeamInfo)
+		{
+			return TeamInfo->IsCoach(inCoach);
+		}		
+	}
+
+	return false;
+}
+
+bool AKFBB_PlayerPawn::IsSameTeam(AKFBB_PlayerPawn* Other) const
+{
+	return Other ? GetTeamID() == Other->GetTeamID() : false;
 }
 
 bool AKFBB_PlayerPawn::CanBeSelected(AKFBB_CoachPC* inCoach) const
 {
-	if (inCoach != Coach) { return false; }
+	if (!IsMyCoach(inCoach)) { return false; }
 	if (Status == EKFBB_PlayerState::Moving) { return false; }
 	return true;
 }
+
 
 void AKFBB_PlayerPawn::RegisterWithField()
 {
@@ -312,7 +336,7 @@ void AKFBB_PlayerPawn::SetStatus(EKFBB_PlayerState::Type newStatus)
 	case EKFBB_PlayerState::Ready:
 		break;
 	case EKFBB_PlayerState::GrabBall:
-		AI->SetDestination(nullptr);
+		AI->ClearDestination();
 		break;
 	}
 	
@@ -344,7 +368,6 @@ bool AKFBB_PlayerPawn::TryPickupBall() const
 	auto roll = FMath::RandRange(1, 6);
 	int chance = 4;
 
-	//test
 	UE_LOG(LogTemp, Warning, TEXT("%s Try Pickup BallOnTile Chance %d Roll %d - %s"), *GetName(), chance, roll, (roll >= chance) ? TEXT("Success!") : TEXT("Fumble!"));
 	
 	return (roll >= chance);
@@ -465,9 +488,26 @@ void AKFBB_PlayerPawn::LoadAttributesByDataName(FString RowName)
 
 uint8 AKFBB_PlayerPawn::GetTeamID() const
 {
-	if (Coach)
+	return TeamID;
+}
+
+void AKFBB_PlayerPawn::SetTeamID(uint8 teamID)
+{
+	TeamID = teamID;
+	OnRep_TeamID();
+}
+
+void AKFBB_PlayerPawn::OnRep_TeamID()
+{
+	auto LocalCoach = Cast<AKFBB_CoachPC>(GetWorld()->GetFirstPlayerController());
+	if (LocalCoach)
 	{
-		return Coach->GetTeamID();
+		DisplayTeamID = (LocalCoach->GetTeamID() == GetTeamID()) ? 0 : 1;
+		BP_UpdateTeamColor();
 	}
-	return 255;
+}
+
+uint8 AKFBB_PlayerPawn::GetDisplayTeamID() const
+{
+	return DisplayTeamID;
 }

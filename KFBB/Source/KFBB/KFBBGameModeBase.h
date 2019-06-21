@@ -9,6 +9,8 @@
 class UUserWidget; 
 class AKFBB_Field;
 class AKFBB_PlayerPawn;
+class AKFBB_CoachPC;
+class AKFBB_TeamInfo;
 
 /**
 *
@@ -46,4 +48,22 @@ public:
 	virtual void Tick(float DeltaTime) override;
 
 	virtual void ResolveCollision(AKFBB_PlayerPawn* PawnA, AKFBB_PlayerPawn* PawnB);
+
+
+	int32 NumTeams = 2;
+	UPROPERTY(EditDefaultsOnly,Category = "KFBB")
+	TSubclassOf<AKFBB_TeamInfo> TeamInfoClass;
+	TArray<AKFBB_TeamInfo*> Teams;
+	virtual void CreateTeamInfos();
+	AKFBB_TeamInfo* GetTeamInfoByID(uint8 teamID);
+	
+	UFUNCTION(BlueprintCallable, Category = "KFBB")
+	virtual void RegisterCoach(AKFBB_CoachPC* PC, uint8 teamID);
+	UFUNCTION(BlueprintCallable, Category = "KFBB")
+	virtual void UnregisterCoach(AKFBB_CoachPC* PC);
+
+	UFUNCTION(BlueprintCallable, Category = "KFBB")
+	virtual void RegisterTeamMember(AKFBB_PlayerPawn* P, uint8 teamID);
+	UFUNCTION(BlueprintCallable, Category = "KFBB")
+	virtual void UnregisterTeamMember(AKFBB_PlayerPawn* P);
 };

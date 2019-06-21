@@ -9,6 +9,8 @@
 // KFBB Includes
 #include "KFBB_Field.h"
 #include "KFBB_PlayerPawn.h"
+#include "KFBB_CoachPC.h"
+#include "Game/KFBB_TeamInfo.h"
 
 
 void AKFBBGameModeBase::BeginPlay()
@@ -27,6 +29,8 @@ void AKFBBGameModeBase::BeginPlay()
 	}
 
 	AKFBB_Field::AssignFieldActor(this, Field);
+
+	CreateTeamInfos();
 }
 
 void AKFBBGameModeBase::Tick(float DeltaTime)
@@ -76,4 +80,53 @@ void AKFBBGameModeBase::ResolveCollision(AKFBB_PlayerPawn* PawnA, AKFBB_PlayerPa
 
 	PawnA->KnockDown(KnockDirA);
 	PawnB->KnockDown(KnockDirB);
+}
+
+void AKFBBGameModeBase::CreateTeamInfos()
+{
+	if (!TeamInfoClass) { return; }
+
+	for (int i = 0; i < NumTeams; i++)
+	{
+		auto TeamInfo = GetWorld()->SpawnActor<AKFBB_TeamInfo>(TeamInfoClass);
+		if (TeamInfo)
+		{
+			int32 TeamID = Teams.Add(TeamInfo);
+			TeamInfo->SetTeamID(TeamID);
+		}
+	}
+}
+
+AKFBB_TeamInfo* AKFBBGameModeBase::GetTeamInfoByID(uint8 teamID)
+{
+	if (!Teams.IsValidIndex(teamID)) { return nullptr; }
+	return Teams[teamID];
+}
+
+void AKFBBGameModeBase::RegisterCoach(AKFBB_CoachPC* PC, uint8 teamID)
+{
+	if (!PC || !Teams.IsValidIndex(teamID)) { return; }
+	Teams[teamID]->RegisterCoach(PC);
+}
+
+void AKFBBGameModeBase::UnregisterCoach(AKFBB_CoachPC* PC)
+{
+	if (!PC) { return; }
+	uint8 teamID = PC->GetTeamID();
+	if (!Teams.IsValidIndex(teamID)) { return; }
+	Teams[teamID]->UnregisterCoach(PC);
+}
+
+void AKFBBGameModeBase::RegisterTeamMember(AKFBB_PlayerPawn* P, uint8 teamID)
+{
+	if (!P || !Teams.IsValidIndex(teamID)) { return; }
+	Teams[teamID]->RegisterTeamMember(P);
+}
+
+void AKFBBGameModeBase::UnregisterTeamMember(AKFBB_PlayerPawn* P)
+{
+	if (!P) { return; }
+	uint8 teamID = P->GetTeamID();
+	if (!Teams.IsValidIndex(teamID)) { return; }
+	Teams[teamID]->UnregisterTeamMember(P);
 }

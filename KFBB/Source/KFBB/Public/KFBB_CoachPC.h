@@ -23,6 +23,7 @@ class KFBB_API AKFBB_CoachPC : public APlayerController
 	void DrawDebugTouchedTile(UKFBB_FieldTile* t);
 
 	virtual void SetSelectedPlayer(AKFBB_PlayerPawn* p);
+	virtual void ClearSelectedPlayer();
 	virtual void SetSelectedTile(UKFBB_FieldTile* t);
 	virtual void SetSelectedTile(TArray<UKFBB_FieldTile*>& ProvidedPath);
 	virtual void SetDestinationTile(UKFBB_FieldTile* t);
@@ -53,8 +54,8 @@ public:
 	UKFBB_FieldTile* DisplayTileUnderMouse = nullptr;
 
 	UFUNCTION(BlueprintCallable)
-	void SpawnPlayerOnTile();
-	void SpawnPlayerOnTile(int x, int y);
+	void SpawnPlayerOnTile(uint8 teamID = 0);
+	void SpawnPlayerOnTile(int x, int y, uint8 teamID);
 
 	UFUNCTION(BlueprintCallable)
 	void SpawnBallOnTile();
@@ -98,6 +99,8 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category = "KFBB")
 	uint8 GetTeamID();
+	UFUNCTION(BlueprintCallable, Category = "KFBB")
+	void SetTeamID(uint8 teamID);
 	uint8 TeamID = 255;
 
 
