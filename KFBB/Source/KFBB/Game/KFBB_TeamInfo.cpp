@@ -146,7 +146,7 @@ void AKFBB_TeamInfo::SpawnPlayers()
 void AKFBB_TeamInfo::RegisterCoach(AKFBB_CoachPC* PC)
 {
 	if (!PC || GetCoachIndex(PC) >= 0) { return; }
-	CoachList.Add(PC);
+	CoachList.AddUnique(PC);
 	PC->TeamID = TeamID;
 }
 
@@ -203,6 +203,27 @@ void AKFBB_TeamInfo::UnregisterTeamMember(AKFBB_PlayerPawn* P)
 bool AKFBB_TeamInfo::IsTeamMember(AKFBB_PlayerPawn* P)
 {
 	return (GetTeamMemberIndex(P) >= 0);
+}
+
+void AKFBB_TeamInfo::Reset()
+{
+	Super::Reset();
+
+	for (int i = 0; i < MemberList.Num(); i++)
+	{
+		FTeamMember& TM = MemberList[i];
+		if (!TM.Player) { continue; }
+
+		FVector StartLocation = TM.SpawnTile->TileLocation + FVector(0, 0, Field->PlayerSpawnOffsetZ);
+		FRotator StartRotation(ForceInit);
+		StartRotation.Yaw = Field->GetActorRotation().Yaw + ((TeamID == 0) ? 180.f : 0.f);
+		TM.Player->TeleportTo(StartLocation, StartRotation, false, true);
+	}
+
+	for (int i = 0; i < CoachList.Num(); i++)
+	{
+		//do something to reset the coaches
+	}
 }
 
 int32 AKFBB_TeamInfo::GetTeamMemberIndex(AKFBB_PlayerPawn* P)

@@ -77,5 +77,11 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "KFBB")
 	virtual bool IsTeamMember(AKFBB_PlayerPawn* P);
 
+	virtual void Reset() override;
+
+	int32 GetTeamID() { return TeamID; }
+	int32 GetNumPlayers() { return MemberList.Num(); }
+	int32 GetNumCoaches() { return CoachList.Num(); }
+
 	friend class AKFBBGameModeBase;
 };
