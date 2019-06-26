@@ -109,8 +109,8 @@ public:
 	UPROPERTY(EditDefaultsOnly)
 	float PlayerSpawnOffsetZ;
 
-	UFUNCTION(BlueprintCallable, Category = "KFBB")
-	uint8 GetTeamID();
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "KFBB")
+	uint8 GetTeamID() const;
 	UFUNCTION(BlueprintCallable, Category = "KFBB")
 	void SetTeamID(uint8 teamID);
 	uint8 TeamID = 255;

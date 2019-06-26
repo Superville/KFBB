@@ -405,7 +405,7 @@ void AKFBB_CoachPC::DrawDebugTouchedTile(UKFBB_FieldTile* t)
 	DrawDebugBox(MyWorld, t->TileLocation + FVector(0, 0, 2), FVector(Field->TileSize, Field->TileSize, 0) * 0.5f, color, false, 1.f);
 }
 
-uint8 AKFBB_CoachPC::GetTeamID()
+uint8 AKFBB_CoachPC::GetTeamID() const
 {
 	return TeamID;
 }

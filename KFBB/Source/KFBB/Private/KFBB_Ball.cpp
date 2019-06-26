@@ -13,6 +13,7 @@
 #include "KFBB_FieldTile.h"
 #include "KFBB.h"
 #include "KFBB_BallMovementComponent.h"
+#include "Game/KFBB_GameState.h"
 
 // Sets default values
 AKFBB_Ball::AKFBB_Ball()
@@ -33,6 +34,28 @@ void AKFBB_Ball::BeginPlay()
 	
 	AKFBB_Field::AssignFieldActor(this, Field);
 	RegisterWithField();
+
+	auto KFGS = Cast<AKFBB_GameState>(GetWorld()->GetGameState());
+	if (KFGS)
+	{
+		KFGS->RegisterBall(this);
+	}
+}
+
+void AKFBB_Ball::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+	Super::EndPlay(EndPlayReason);
+
+	auto KFGS = Cast<AKFBB_GameState>(GetWorld()->GetGameState());
+	if (KFGS)
+	{
+		KFGS->UnregisterBall(this);
+	}
+}
+
+void AKFBB_Ball::Reset()
+{
+	Super::Reset();
 }
 
 // Called every frame

@@ -18,6 +18,7 @@
 #include "KFBB_CoachPC.h"
 #include "KFBB_Ball.h"
 #include "Game/KFBB_TeamInfo.h"
+#include "Game/KFBB_GameState.h"
 
 
 AKFBBGameModeBase::AKFBBGameModeBase()
@@ -129,11 +130,11 @@ void AKFBBGameModeBase::SpawnTeams()
 		TeamInfo->Init(this, TeamID, Field, OptionsString);
 	}
 
-/*
-//test
-	auto FBGS = Cast<AFantasyBallGameState>(GameState);
-	if (!FBGS) { return; }
-	FBGS->InitTeamInfo(NumTeams);*/
+	auto KFGS = Cast<AKFBB_GameState>(GameState);
+	if (KFGS)
+	{
+		KFGS->InitTeamInfo(NumTeams);
+	}
 }
 
 void AKFBBGameModeBase::SpawnTeamPlayers()
