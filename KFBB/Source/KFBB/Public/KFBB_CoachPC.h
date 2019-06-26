@@ -12,6 +12,18 @@ class AKFBB_Field;
 class UKFBB_Field_Tile;
 class AKFBB_Ball;
 
+UENUM(BlueprintType)
+namespace EDebugTile
+{
+	enum Type
+	{
+		Show_None			UMETA(DisplayName = "None"),
+		Show_TileIndex		UMETA(DisplayName = "TileIndex"),
+		Show_TileXY			UMETA(DisplayName = "TileXY"),
+		Show_TileTeamID		UMETA(DisplayName = "TileTeam"),
+	};
+}
+
 /**
  * 
  */
@@ -108,4 +120,9 @@ public:
 	virtual void DrawDebug(float DeltaTime);
 	bool bDebugHighlightSelectedTile = false;
 	float DebugFlashSelectedTileTimer;
+
+	UFUNCTION(BlueprintCallable, Category = "KFBB")
+	void NextTileDebugState();
+	void DrawTileDebug(float DeltaTime);
+	TEnumAsByte<EDebugTile::Type> TileDebugState = EDebugTile::Show_None;
 };

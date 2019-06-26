@@ -8,6 +8,8 @@
 
 class USceneComponent;
 class UKFBB_FieldTile;
+class UMaterialInstance;
+class UMaterial;
 
 USTRUCT()
 struct FTileDir
@@ -52,6 +54,10 @@ public:
 	static bool AssignFieldActor(AActor* src, AKFBB_Field*& ptrField);
 
 	TArray<UKFBB_FieldTile*> Tiles;
+	TArray<UKFBB_FieldTile*> EndZoneTiles_Team0;
+	TArray<UKFBB_FieldTile*> EndZoneTiles_Team1;
+	TArray<UKFBB_FieldTile*> Tiles_Team0;
+	TArray<UKFBB_FieldTile*> Tiles_Team1;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	int Length;
@@ -75,6 +81,10 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	UMaterial* Mat_EndZone;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	UMaterialInstance* MatInst_EndZone_Blue;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	UMaterialInstance* MatInst_EndZone_Red;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	UMaterial* Mat_WideOut;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	UMaterial* Mat_Scrimmage;
@@ -90,6 +100,8 @@ public:
 	int GetXByIndex(int idx) const;
 	UFUNCTION(BlueprintPure)
 	int GetYByIndex(int idx) const;
+	UFUNCTION(BlueprintPure)
+	UKFBB_FieldTile* GetTileByXY(int x, int y) const;
 
 	UFUNCTION(BlueprintPure)
 	int GetFieldWidth() const { return Width; }
@@ -97,6 +109,12 @@ public:
 	int GetFieldLength() const { return Length; }
 	UFUNCTION(BlueprintPure)
 	FVector GetFieldTileLocation(int x, int y) const;
+
+	UPROPERTY(EditDefaultsOnly)
+	float PlayerSpawnOffsetZ;
+
+	UFUNCTION()
+	void TeamColorTileMaterials(int TeamIdx);
 
 	TArray<struct FTileDir> TileDirections;
 	FTileDir GetScatterDirection(short centerX = 0, short centerY = 0, int cone = 4);

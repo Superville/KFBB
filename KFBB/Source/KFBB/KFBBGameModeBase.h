@@ -3,7 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "GameFramework/GameModeBase.h"
+#include "GameFramework/GameMode.h"
 #include "KFBBGameModeBase.generated.h"
 
 class UUserWidget; 
@@ -11,12 +11,26 @@ class AKFBB_Field;
 class AKFBB_PlayerPawn;
 class AKFBB_CoachPC;
 class AKFBB_TeamInfo;
+class AKFBB_Ball;
+
+namespace KFBBMatchState
+{
+	const FName EnteringMap = FName(TEXT("EnteringMap"));
+	const FName WaitingToStart = FName(TEXT("WaitingToStart"));
+	
+	const FName InProgress = FName(TEXT("InProgress"));
+	const FName InReplay = FName(TEXT("InReplay"));
+	
+	const FName WaitingPostMatch = FName(TEXT("WaitingPostMatch"));
+	const FName LeavingMap = FName(TEXT("LeavingMap"));
+	const FName Aborted = FName(TEXT("Aborted"));
+}
 
 /**
 *
 */
 UCLASS()
-class KFBB_API AKFBBGameModeBase : public AGameModeBase
+class KFBB_API AKFBBGameModeBase : public AGameMode
 {
 	GENERATED_BODY()
 		
@@ -35,6 +49,36 @@ protected:
 	AKFBB_Field* Field;
 
 public:
+	AKFBBGameModeBase();
+
+	virtual void BeginPlay() override;
+	virtual void PreInitializeComponents() override;
+	virtual void Tick(float DeltaTime) override;
+
+	// Ball Info
+	virtual UClass* GetDefaultBallClass();
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Classes")
+	TSubclassOf<AKFBB_Ball> DefaultBallClass;
+
+	// Player Info
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Classes")
+	TSubclassOf<AKFBB_PlayerPawn> DefaultPlayerClass;
+
+	//Team Info
+	UPROPERTY(EditDefaultsOnly, Category = "Classes")
+	TSubclassOf<AKFBB_TeamInfo> TeamInfoClass;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Team")
+	int32 NumTeams = 2;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Team")
+	TArray<AKFBB_TeamInfo*> Teams;
+
+	virtual void SpawnTeams();
+	virtual void SpawnTeamPlayers();
+	virtual UClass* GetPawnClassByID(int PawnID);
+	AKFBB_TeamInfo* GetTeamInfoByID(uint8 teamID);
+
+
+
 	UFUNCTION(BlueprintPure)
 	float GetRemainingGameTime() const;
 	UFUNCTION(BlueprintPure)
@@ -44,18 +88,10 @@ public:
 	UFUNCTION(BlueprintPure)
 	FVector GetFieldTileLocation(int x, int y) const;
 
-	virtual void BeginPlay() override;
-	virtual void Tick(float DeltaTime) override;
 
 	virtual void ResolveCollision(AKFBB_PlayerPawn* PawnA, AKFBB_PlayerPawn* PawnB);
 
 
-	int32 NumTeams = 2;
-	UPROPERTY(EditDefaultsOnly,Category = "KFBB")
-	TSubclassOf<AKFBB_TeamInfo> TeamInfoClass;
-	TArray<AKFBB_TeamInfo*> Teams;
-	virtual void CreateTeamInfos();
-	AKFBB_TeamInfo* GetTeamInfoByID(uint8 teamID);
 	
 	UFUNCTION(BlueprintCallable, Category = "KFBB")
 	virtual void RegisterCoach(AKFBB_CoachPC* PC, uint8 teamID);

@@ -3,15 +3,27 @@
 #include "KFBBGameModeBase.h"
 
 // Engine Includes
+#include "UObject/ConstructorHelpers.h"
+#include "Engine/LevelScriptActor.h"
+#include "Engine/Engine.h"
 #include "EngineUtils.h"
+#include "TimerManager.h"
+#include "Kismet/GameplayStatics.h"
+#include "GameFramework/GameSession.h"
 #include "Blueprint/UserWidget.h"
 
 // KFBB Includes
 #include "KFBB_Field.h"
 #include "KFBB_PlayerPawn.h"
 #include "KFBB_CoachPC.h"
+#include "KFBB_Ball.h"
 #include "Game/KFBB_TeamInfo.h"
 
+
+AKFBBGameModeBase::AKFBBGameModeBase()
+{
+	PlayerControllerClass = AKFBB_CoachPC::StaticClass();
+}
 
 void AKFBBGameModeBase::BeginPlay()
 {
@@ -29,8 +41,30 @@ void AKFBBGameModeBase::BeginPlay()
 	}
 
 	AKFBB_Field::AssignFieldActor(this, Field);
+	SpawnTeams();
+	if (GetNetMode() != NM_DedicatedServer)
+	{
+		SpawnTeamPlayers();
+	}
+}
 
-	CreateTeamInfos();
+void AKFBBGameModeBase::PreInitializeComponents()
+{
+	Super::PreInitializeComponents();
+
+/*
+	AKFBB_Field::AssignFieldActor(this, Field);
+
+	SpawnTeams();
+	if (GetNetMode() != NM_DedicatedServer)
+	{
+		SpawnTeamPlayers();
+	}*/
+}
+
+UClass* AKFBBGameModeBase::GetDefaultBallClass()
+{
+	return DefaultBallClass;
 }
 
 void AKFBBGameModeBase::Tick(float DeltaTime)
@@ -82,19 +116,40 @@ void AKFBBGameModeBase::ResolveCollision(AKFBB_PlayerPawn* PawnA, AKFBB_PlayerPa
 	PawnB->KnockDown(KnockDirB);
 }
 
-void AKFBBGameModeBase::CreateTeamInfos()
+void AKFBBGameModeBase::SpawnTeams()
 {
 	if (!TeamInfoClass) { return; }
 
-	for (int i = 0; i < NumTeams; i++)
+	for (int TeamID = 0; TeamID < NumTeams; TeamID++)
 	{
 		auto TeamInfo = GetWorld()->SpawnActor<AKFBB_TeamInfo>(TeamInfoClass);
-		if (TeamInfo)
-		{
-			int32 TeamID = Teams.Add(TeamInfo);
-			TeamInfo->SetTeamID(TeamID);
-		}
+		if (!TeamInfo) { continue; }
+		
+		Teams.Add(TeamInfo);
+		TeamInfo->Init(this, TeamID, Field, OptionsString);
 	}
+
+/*
+//test
+	auto FBGS = Cast<AFantasyBallGameState>(GameState);
+	if (!FBGS) { return; }
+	FBGS->InitTeamInfo(NumTeams);*/
+}
+
+void AKFBBGameModeBase::SpawnTeamPlayers()
+{
+	for (int TeamID = 0; TeamID < Teams.Num(); TeamID++)
+	{
+		auto TeamInfo = Teams[TeamID];
+		if (!TeamInfo) { continue; }
+		TeamInfo->SpawnPlayers();
+	}
+}
+
+UClass* AKFBBGameModeBase::GetPawnClassByID(int PawnID)
+{
+	//todo replace... look up class string by ID, then load class
+	return DefaultPlayerClass;
 }
 
 AKFBB_TeamInfo* AKFBBGameModeBase::GetTeamInfoByID(uint8 teamID)

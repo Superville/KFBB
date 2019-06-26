@@ -398,7 +398,7 @@ void AKFBB_CoachPC::DrawDebugTouchedTile(UKFBB_FieldTile* t)
 	auto MyWorld = GetWorld();
 
 	FColor color = FColor::Green;
-	if (t->bEndZone) color = FColor::Red;
+	if (t->bEndZone_Team0 || t->bEndZone_Team1) color = FColor::Red;
 	else if (t->bWideOut) color = FColor::Orange;
 	else if (t->bScrimmageLine) color = FColor::Cyan;
 
@@ -416,6 +416,7 @@ void AKFBB_CoachPC::SetTeamID(uint8 teamID)
 	if (KBGM)
 	{
 		KBGM->RegisterCoach(this, teamID);
+		Field->TeamColorTileMaterials(teamID);
 	}
 }
 
@@ -457,4 +458,47 @@ void AKFBB_CoachPC::DrawDebug(float DeltaTime)
 		DisplayTileUnderMouse->DrawDebugTileOverride(FVector(0, 0, 2), 0.4f, FColor::Yellow);
 	}
 
+	DrawTileDebug(DeltaTime);
+}
+
+void AKFBB_CoachPC::NextTileDebugState()
+{
+	if (TileDebugState == EDebugTile::Show_None)
+	{
+		TileDebugState = EDebugTile::Show_TileIndex;
+	}
+	else if (TileDebugState == EDebugTile::Show_TileIndex)
+	{
+		TileDebugState = EDebugTile::Show_TileXY;
+	}
+	else if (TileDebugState == EDebugTile::Show_TileXY)
+	{
+		TileDebugState = EDebugTile::Show_TileTeamID;
+	}
+	else
+	{
+		TileDebugState = EDebugTile::Show_None;
+	}
+}
+
+void AKFBB_CoachPC::DrawTileDebug(float DeltaTime)
+{
+	if (!Field) { return; }
+
+	for (int i = 0; i < Field->Tiles.Num(); i++)
+	{
+		auto t = Field->Tiles[i];
+		if (TileDebugState == EDebugTile::Show_TileIndex)
+		{
+			DrawDebugString(GetWorld(), t->TileLocation, FString::Printf(TEXT("%d"), t->TileIdx), nullptr, FColor::White, 0.01f);
+		}
+		else if (TileDebugState == EDebugTile::Show_TileXY)
+		{
+			DrawDebugString(GetWorld(), t->TileLocation, FString::Printf(TEXT("%d/%d"), t->TileX, t->TileY), nullptr, FColor::White, 0.01f);
+		}
+		else if (TileDebugState == EDebugTile::Show_TileTeamID)
+		{
+			DrawDebugString(GetWorld(), t->TileLocation, FString::Printf(TEXT("%d"), t->TileTeamID), nullptr, FColor::White, 0.01f);
+		}
+	}
 }

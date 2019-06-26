@@ -8,6 +8,9 @@
 
 class AKFBB_AIController;
 class AKFBB_PlayerPawn;
+class AKFBBGameModeBase;
+class UKFBB_FieldTile;
+class AKFBB_Field;
 
 USTRUCT(BlueprintType)
 struct FTeamMember
@@ -15,8 +18,20 @@ struct FTeamMember
 	GENERATED_USTRUCT_BODY()
 
 public:
+	UPROPERTY()
 	AKFBB_PlayerPawn* Player = nullptr;
+	UPROPERTY()
 	AKFBB_AIController* AI = nullptr;
+
+	UPROPERTY()
+	int32 TypeID = -1; // Identifies the pawn class/etc.
+	
+	UPROPERTY()
+	int32 SpawnTileX = -1;
+	UPROPERTY()
+	int32 SpawnTileY = -1;
+	UPROPERTY()
+	UKFBB_FieldTile* SpawnTile = nullptr;
 };
 
 /**
@@ -26,6 +41,9 @@ UCLASS()
 class KFBB_API AKFBB_TeamInfo : public AInfo
 {
 	GENERATED_BODY()
+
+	AKFBBGameModeBase* KFGM = nullptr;
+	AKFBB_Field* Field = nullptr;
 
 	int32 GetTeamMemberIndex(AKFBB_PlayerPawn* P);
 	int32 GetCoachIndex(AKFBB_CoachPC* C);
@@ -39,6 +57,11 @@ public:
 	TArray<AKFBB_CoachPC*> CoachList;
 	UPROPERTY(BlueprintReadOnly, Category = "KFBB")
 	TArray<FTeamMember> MemberList;
+
+	virtual void Init(AKFBBGameModeBase* InGameMode, int32 InTeamID, AKFBB_Field* InField, FString OptionsString);
+	virtual void SetupPlayers(FString OptionsString);
+	virtual void ParsePlayerString(FString PlayerString);
+	virtual void SpawnPlayers();
 
 	UFUNCTION(BlueprintCallable, Category = "KFBB")
 	virtual void RegisterCoach(AKFBB_CoachPC* PC);

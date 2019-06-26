@@ -16,9 +16,15 @@ void UKFBB_FieldTile::Init(AKFBB_Field* inField, int inIdx)
 
 	TileLocation = Field->Origin + FVector(Field->TileSize * TileX, Field->TileSize * TileY, 0.f) + (Field->TileStep * 0.5f);
 
-	if ((TileY - Field->EndZoneSize) < 0 || (TileY + Field->EndZoneSize) >= Field->Length)
+	if ((TileY - Field->EndZoneSize) < 0)
 	{
-		bEndZone = true;
+		Field->EndZoneTiles_Team0.Add(this);
+		bEndZone_Team0 = true;
+	}
+	if ((TileY + Field->EndZoneSize) >= Field->Length)
+	{
+		Field->EndZoneTiles_Team1.Add(this);
+		bEndZone_Team1 = true;
 	}
 	if ((TileX - Field->WideOutSize) < 0 || (TileX + Field->WideOutSize) >= Field->Width)
 	{
@@ -30,6 +36,8 @@ void UKFBB_FieldTile::Init(AKFBB_Field* inField, int inIdx)
 		bScrimmageLine = true;
 	}
 
+	TileTeamID = (TileY < Field->Length / 2) ? 1 : 0;
+
 	SetStaticMesh(Field->TileMesh);
 	SetWorldLocation(TileLocation - (Field->TileStep*0.5f));
 	auto bounds = Field->TileMesh->GetBounds().BoxExtent * 2;
@@ -37,7 +45,7 @@ void UKFBB_FieldTile::Init(AKFBB_Field* inField, int inIdx)
 	SetRelativeScale3D(scale);
 	
 	// Set visual appearance of the tile
-	if (bEndZone) SetMaterial(0, Field->Mat_EndZone);
+	if (bEndZone_Team0 || bEndZone_Team1) SetMaterial(0, Field->Mat_EndZone);
 	else if (bWideOut) SetMaterial(0, Field->Mat_WideOut);
 	else if (bScrimmageLine) SetMaterial(0, Field->Mat_Scrimmage);
 	else SetMaterial(0, Field->Mat_Field);
@@ -206,7 +214,7 @@ FColor UKFBB_FieldTile::GetDebugColor() const
 	{
 		color = Ball->CanBePickedUp() ? FColor::White : FColor::Blue;
 	}	
-	else if (bEndZone) color = FColor::Red;
+	else if (bEndZone_Team0 || bEndZone_Team1) color = FColor::Red;
 	else if (bWideOut) color = FColor::Orange;
 	else if (bScrimmageLine) color = FColor::Cyan;
 	return color;

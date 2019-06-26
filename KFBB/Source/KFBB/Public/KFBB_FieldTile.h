@@ -24,9 +24,13 @@ public:
 	int TileX;
 	UPROPERTY(BlueprintReadOnly)
 	int TileY;
+	UPROPERTY(BlueprintReadOnly)
+	int TileTeamID;
 
 	UPROPERTY(BlueprintReadOnly)
-	bool bEndZone;
+	bool bEndZone_Team0;
+	UPROPERTY(BlueprintReadOnly)
+	bool bEndZone_Team1;
 	UPROPERTY(BlueprintReadOnly)
 	bool bWideOut;
 	UPROPERTY(BlueprintReadOnly)

@@ -49,7 +49,7 @@ AKFBB_Field::AKFBB_Field(const FObjectInitializer& ObjectInitializer) : Super(Ob
 	Root = ObjectInitializer.CreateAbstractDefaultSubobject<USceneComponent>(this, TEXT("Root"));
 	RootComponent = Root;
 
-	Tiles = TArray<UKFBB_FieldTile*>();
+//	Tiles = TArray<UKFBB_FieldTile*>();
 }
 
 bool AKFBB_Field::AssignFieldActor(AActor* src, AKFBB_Field*& ptrField)
@@ -100,6 +100,7 @@ void AKFBB_Field::BeginPlay()
 		if (t != nullptr)
 		{
 			Tiles.Insert(t, t->TileIdx);
+			t->Init(this, t->TileIdx);
 		}
 	}
 }
@@ -118,6 +119,15 @@ void AKFBB_Field::OnConstruction(const FTransform& Transform)
 	if (TileSize == 0.f)	TileSize = 48.f;
 	if (EndZoneSize == 0)	EndZoneSize = 1;
 	if (WideOutSize == 0)	WideOutSize = 3;
+
+	if ((Length % 2) != 0)
+	{
+		UE_LOG(LogTemp, Error, TEXT("ERROR: Field LENGTH must be an EVEN number!!!!"));
+	}
+	if ((Width % 2) != 1)
+	{
+		UE_LOG(LogTemp, Error, TEXT("ERROR: Field WIDTH must be an ODD number!!!!"));
+	}
 
 	Tiles.Empty();
 
@@ -196,6 +206,12 @@ int AKFBB_Field::GetYByIndex(int idx) const
 	return idx / Width;
 }
 
+UKFBB_FieldTile* AKFBB_Field::GetTileByXY(int x, int y) const
+{
+	int TileIdx = GetIndexByXY(x, y);
+	return (Tiles.IsValidIndex(TileIdx)) ? Tiles[TileIdx] : nullptr;	
+}
+
 FVector AKFBB_Field::GetFieldTileLocation(int x, int y) const
 {
 	int idx = GetIndexByXY(x, y);
@@ -207,6 +223,28 @@ FVector AKFBB_Field::GetFieldTileLocation(int x, int y) const
 		return t->TileLocation;
 	}
 	return FVector::ZeroVector;
+}
+
+void AKFBB_Field::TeamColorTileMaterials(int TeamIdx)
+{
+	if (TeamIdx < 0 || TeamIdx > 1) { return; }
+
+	for (int i = 0; i < EndZoneTiles_Team0.Num(); i++)
+	{
+		auto t = EndZoneTiles_Team0[i];
+		if (t)
+		{
+			t->SetMaterial(0, TeamIdx == 0 ? MatInst_EndZone_Blue : MatInst_EndZone_Red);
+		}
+	}
+	for (int i = 0; i < EndZoneTiles_Team1.Num(); i++)
+	{
+		auto t = EndZoneTiles_Team1[i];
+		if (t)
+		{
+			t->SetMaterial(0, TeamIdx == 1 ? MatInst_EndZone_Blue : MatInst_EndZone_Red);
+		}
+	}
 }
 
 FTileDir AKFBB_Field::GetScatterDirection(short centerX, short centerY, int cone)
