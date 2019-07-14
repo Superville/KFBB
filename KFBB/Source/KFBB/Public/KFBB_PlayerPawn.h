@@ -81,8 +81,8 @@ public:
 	float StunCD;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = PlayerData)
 	float StandCD;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = PlayerData)
-	TSoftClassPtr<class AKFBB_PlayerPawn> PlayerClassReference;
+//	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = PlayerData)
+//	TSoftClassPtr<class AKFBB_PlayerPawn> PlayerClassReference;
 };
 
 
@@ -98,6 +98,29 @@ class KFBB_API AKFBB_PlayerPawn : public ACharacter, public IAbilitySystemInterf
 	void ClearCooldownTimer();
 	void OnCooldownTimerExpired();
 	FColor GetCooldownColor() const;
+
+	UPROPERTY(BlueprintReadWrite, Category = "KFBB | AI", meta = (AllowPrivateAccess = "true"))
+	UKFBB_FieldTile* DestinationTile;
+	UFUNCTION(BlueprintCallable, Category = "KFBB | AI", meta = (AllowPrivateAccess = "true"))
+	virtual void SetDestinationTile(UKFBB_FieldTile* Tile);
+	UFUNCTION(BlueprintCallable, Category = "KFBB | AI", meta = (AllowPrivateAccess = "true"))
+	virtual void ClearDestinationTile();
+	UPROPERTY(ReplicatedUsing = OnRep_DestinationTile)
+	int32 RepDestinationTile;
+	UFUNCTION()
+	void OnRep_DestinationTile();
+
+	UPROPERTY(BlueprintReadWrite, Category = "KFBB | AI", meta = (AllowPrivateAccess = "true"))
+	TArray<UKFBB_FieldTile*> PathToDestTile;
+	UFUNCTION(BlueprintCallable, Category = "KFBB | AI", meta = (AllowPrivateAccess = "true"))
+	virtual void SetPathToDestTile(TArray<UKFBB_FieldTile*> PathToDest);
+	UFUNCTION(BlueprintCallable, Category = "KFBB | AI", meta = (AllowPrivateAccess = "true"))
+	virtual void ClearPathToDestTile();
+	UPROPERTY(ReplicatedUsing = OnRep_PathToDestTile)
+	TArray<int32> RepPathToDestTile;
+	UFUNCTION()
+	void OnRep_PathToDestTile();
+
 
 	void DrawDebugCurrentTile() const;
 	void DrawDebugStatus() const;
@@ -239,4 +262,5 @@ public:
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "KFBB")
 	uint8 GetDisplayTeamID() const;
 
+	friend class AKFBB_AIController;
 };

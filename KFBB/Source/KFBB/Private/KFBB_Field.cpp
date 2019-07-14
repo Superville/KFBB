@@ -84,25 +84,7 @@ void AKFBB_Field::BeginPlay()
 {
 	Super::BeginPlay();
 
-	TileDirections.Add(FTileDir(1, 0));
-	TileDirections.Add(FTileDir(1, 1));
-	TileDirections.Add(FTileDir(0, 1));
-	TileDirections.Add(FTileDir(-1, 1));
-	TileDirections.Add(FTileDir(-1, 0));
-	TileDirections.Add(FTileDir(-1, -1));
-	TileDirections.Add(FTileDir(0, -1));
-	TileDirections.Add(FTileDir(1, -1));
-
-	auto TileList = GetComponentsByClass(UKFBB_FieldTile::StaticClass());
-	for (int i = 0; i < TileList.Num(); ++i)
-	{
-		UKFBB_FieldTile* t = Cast<UKFBB_FieldTile>(TileList[i]);
-		if (t != nullptr)
-		{
-			Tiles.Insert(t, t->TileIdx);
-			t->Init(this, t->TileIdx);
-		}
-	}
+	Init();
 }
 
 void AKFBB_Field::Destroyed()
@@ -149,6 +131,32 @@ void AKFBB_Field::OnConstruction(const FTransform& Transform)
 	}
 }
 
+void AKFBB_Field::Init()
+{
+	if (bFieldInitialized) { return; }
+	bFieldInitialized = true;
+
+	TileDirections.Add(FTileDir(1, 0));
+	TileDirections.Add(FTileDir(1, 1));
+	TileDirections.Add(FTileDir(0, 1));
+	TileDirections.Add(FTileDir(-1, 1));
+	TileDirections.Add(FTileDir(-1, 0));
+	TileDirections.Add(FTileDir(-1, -1));
+	TileDirections.Add(FTileDir(0, -1));
+	TileDirections.Add(FTileDir(1, -1));
+
+	auto TileList = GetComponentsByClass(UKFBB_FieldTile::StaticClass());
+	for (int i = 0; i < TileList.Num(); ++i)
+	{
+		UKFBB_FieldTile* t = Cast<UKFBB_FieldTile>(TileList[i]);
+		if (t != nullptr)
+		{
+			Tiles.Insert(t, t->TileIdx);
+			t->Init(this, t->TileIdx);
+		}
+	}
+}
+
 bool AKFBB_Field::AreAdjacentTiles(UKFBB_FieldTile* a, UKFBB_FieldTile* b)
 {
 	if (!a || !b) { return false; }
@@ -182,27 +190,19 @@ void AKFBB_Field::Tick(float DeltaTime)
 
 int AKFBB_Field::GetIndexByXY(int x, int y) const
 {
-	if (x < 0 || x >= Width || y < 0 || y >= Length)
-	{
-		return -1;
-	}
-
+	if (x < 0 || x >= Width || y < 0 || y >= Length) { return -1; }
 	return (y * Width) + x;
 }
 
 int AKFBB_Field::GetXByIndex(int idx) const
 {
-	if (idx < 0 || idx >= (Width * Length))
-		return -1;
-
+	if (idx < 0 || idx >= (Width * Length)) { return -1; }
 	return idx % Width;
 }
 
 int AKFBB_Field::GetYByIndex(int idx) const
 {
-	if (idx < 0 || idx >= (Width * Length))
-		return -1;
-
+	if (idx < 0 || idx >= (Width * Length)) { return -1; }
 	return idx / Width;
 }
 
@@ -210,6 +210,30 @@ UKFBB_FieldTile* AKFBB_Field::GetTileByXY(int x, int y) const
 {
 	int TileIdx = GetIndexByXY(x, y);
 	return (Tiles.IsValidIndex(TileIdx)) ? Tiles[TileIdx] : nullptr;	
+}
+
+UKFBB_FieldTile* AKFBB_Field::GetTileByIndex(int idx) const
+{
+	return GetTileByXY(GetXByIndex(idx), GetYByIndex(idx));
+}
+
+void AKFBB_Field::ConvertArrayIndexToTile(TArray<int32> IndexArray, TArray<UKFBB_FieldTile*>& TileArray)
+{
+	TileArray.Empty(IndexArray.Num());
+	for (int i = 0; i < IndexArray.Num(); i++)
+	{
+		TileArray.Add(GetTileByIndex(IndexArray[i]));
+	}
+}
+
+void AKFBB_Field::ConvertArrayTileToIndex(TArray<UKFBB_FieldTile*> TileArray, TArray<int32>& IndexArray)
+{
+	IndexArray.Empty(TileArray.Num());
+	for (int i = 0; i < TileArray.Num(); i++)
+	{
+		UKFBB_FieldTile* Tile = TileArray[i];
+		IndexArray.Add(Tile ? TileArray[i]->TileIdx : -1);
+	}
 }
 
 FVector AKFBB_Field::GetFieldTileLocation(int x, int y) const

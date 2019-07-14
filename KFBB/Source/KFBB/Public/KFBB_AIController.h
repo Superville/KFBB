@@ -31,16 +31,18 @@ public:
 	
 	UPROPERTY(BlueprintReadonly)
 	bool bAbortGridMove = false;
-	UPROPERTY(BlueprintReadonly)
-	UKFBB_FieldTile* DestinationTile;
-	UPROPERTY(BlueprintReadonly)
-	TArray<UKFBB_FieldTile*> PathToDestTile;
 
-	virtual bool SetDestination(UKFBB_FieldTile* DestTile);
-	virtual bool SetDestination(TArray<UKFBB_FieldTile*>& ProvidedPath);
-	virtual bool ConfirmMoveToDestinationTile();
+	UFUNCTION(BlueprintPure, Category = "KFBB | AI")
+	virtual UKFBB_FieldTile* GetDestinationTile();
+	virtual bool MarkDestinationTile(UKFBB_FieldTile* DestTile);
+
+	UFUNCTION(BlueprintPure, Category = "KFBB | AI")
+	virtual TArray<UKFBB_FieldTile*> GetDestinationPath();
+	virtual bool MarkDestinationPath(TArray<UKFBB_FieldTile*>& ProvidedPath);
+
 	virtual void ClearDestination();
-
+	virtual bool ConfirmMoveToDestinationTile();
+	
 	void ClearPathing(TArray<UKFBB_FieldTile*>& out_PathList);
 	bool AddToPath(UKFBB_FieldTile* StartTile, UKFBB_FieldTile* DestTile, TArray<UKFBB_FieldTile*>& out_PathList);
 	bool GeneratePathToTile(UKFBB_FieldTile* StartTile, UKFBB_FieldTile* DestTile, TArray<UKFBB_FieldTile*>& out_PathList, int MaxPathLength = 0);
@@ -51,6 +53,4 @@ public:
 	FName PathSetName = FName("bPathSet");
 
 	uint8 GetTeamID() const;
-	
-	void DrawDebugPath() const;
 };

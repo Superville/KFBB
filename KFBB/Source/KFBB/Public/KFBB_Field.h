@@ -34,6 +34,8 @@ class KFBB_API AKFBB_Field : public AActor
 {
 	GENERATED_BODY()
 
+	bool bFieldInitialized = false;
+
 	AKFBB_Field(const FObjectInitializer& ObjectInitializer);
 	virtual void OnConstruction(const FTransform& Transform) override;
 
@@ -47,8 +49,12 @@ protected:
 	virtual void Destroyed() override;
 
 public:
+	virtual void Init();
+
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
+
+	
 
 	// Searches the map for a KFBB_Field actor and assigns it to the pointer ref
 	static bool AssignFieldActor(AActor* src, AKFBB_Field*& ptrField);
@@ -102,6 +108,9 @@ public:
 	int GetYByIndex(int idx) const;
 	UFUNCTION(BlueprintPure)
 	UKFBB_FieldTile* GetTileByXY(int x, int y) const;
+	UKFBB_FieldTile* GetTileByIndex(int idx) const;
+	void ConvertArrayIndexToTile(TArray<int32> IndexArray, TArray<UKFBB_FieldTile*>& TileArray);
+	void ConvertArrayTileToIndex(TArray<UKFBB_FieldTile*> TileArray, TArray<int32>& IndexArray);
 
 	UFUNCTION(BlueprintPure)
 	int GetFieldWidth() const { return Width; }

@@ -33,6 +33,21 @@ AKFBB_Field* AKFBB_AIController::GetField() const
 	return nullptr;
 }
 
+UKFBB_FieldTile* AKFBB_AIController::GetDestinationTile()
+{
+	return MyPlayerPawn ? MyPlayerPawn->DestinationTile : nullptr;
+}
+
+TArray<UKFBB_FieldTile*> AKFBB_AIController::GetDestinationPath()
+{
+	if (MyPlayerPawn)
+	{
+		return MyPlayerPawn->PathToDestTile;
+	}
+	TArray<UKFBB_FieldTile*> EmptyArray;
+	return EmptyArray;
+}
+
 void AKFBB_AIController::ClearPathing(TArray<UKFBB_FieldTile*>& out_PathList)
 {
 	out_PathList.Empty();
@@ -79,39 +94,38 @@ bool AKFBB_AIController::CanMoveThruTile(UKFBB_FieldTile* tile) const
 	return bSuccess;
 }
 
-bool AKFBB_AIController::SetDestination(UKFBB_FieldTile* DestTile)
+bool AKFBB_AIController::MarkDestinationTile(UKFBB_FieldTile* DestTile)
 {
 	ClearDestination();
 
 	auto P = Cast<AKFBB_PlayerPawn>(GetPawn());
 	if (!P || !DestTile) { return false; }
 
-	DestinationTile = DestTile;
+	P->SetDestinationTile(DestTile);
 	
-	if (DestinationTile == P->CurrentTile) { return true; }
+	if (P->DestinationTile == P->CurrentTile) { return true; }
 
 	int MaxPathLength = P->AttribSet ? P->AttribSet->Stat_Movement.GetCurrentValue() + 1 : 0;
-	bool bSuccess = GeneratePathToTile(P->CurrentTile, DestinationTile, PathToDestTile);
-	bSuccess = bSuccess && PathToDestTile.Num() <= MaxPathLength;
+	bool bSuccess = GeneratePathToTile(P->CurrentTile, P->DestinationTile, P->PathToDestTile);
+	bSuccess = bSuccess && GetDestinationPath().Num() <= MaxPathLength;
 
 	return bSuccess;
 }
 
-bool AKFBB_AIController::SetDestination(TArray<UKFBB_FieldTile*>& ProvidedPath)
+bool AKFBB_AIController::MarkDestinationPath(TArray<UKFBB_FieldTile*>& ProvidedPath)
 {
 	ClearDestination();
 
 	auto P = Cast<AKFBB_PlayerPawn>(GetPawn());
 	if (!P || ProvidedPath.Num() <= 0)	{ return false; }
 
-	DestinationTile = ProvidedPath.Last();
-
-	bool bSuccess = (DestinationTile == P->CurrentTile);
+	P->SetDestinationTile(ProvidedPath.Last());
+	bool bSuccess = (P->DestinationTile == P->CurrentTile);
 	if (!bSuccess)
 	{
 		int MaxPathLength = P->AttribSet ? P->AttribSet->Stat_Movement.GetCurrentValue() + 1 : 0;
-		PathToDestTile = ProvidedPath;
-		bSuccess = bSuccess && PathToDestTile.Num() <= MaxPathLength;
+		P->SetPathToDestTile(ProvidedPath);
+		bSuccess = bSuccess && GetDestinationPath().Num() <= MaxPathLength;
 
 		//todo verify path provided are adjacent files
 	}
@@ -133,8 +147,10 @@ bool AKFBB_AIController::ConfirmMoveToDestinationTile()
 
 void AKFBB_AIController::ClearDestination()
 {
-	DestinationTile = nullptr;
-	PathToDestTile.Empty();
+	if (!MyPlayerPawn) { return; }
+	MyPlayerPawn->ClearDestinationTile();
+	MyPlayerPawn->ClearPathToDestTile();
+
 	bAbortGridMove = true;
 
 	auto BB = GetBlackboardComponent();
@@ -297,24 +313,3 @@ uint8 AKFBB_AIController::GetTeamID() const
 	return (MyPlayerPawn ? MyPlayerPawn->GetTeamID() : 255);
 }
 
-void AKFBB_AIController::DrawDebugPath() const
-{
-	FVector offset(0, 0, 2);
-	UKFBB_FieldTile* LastTile = nullptr;
-	for (int i = 0; i < PathToDestTile.Num(); i++)
-	{
-		auto CurrentTile = PathToDestTile[i];
-		CurrentTile->DrawDebugTileOverride(offset, 0.25f, FColor::Emerald);
-		if (LastTile != nullptr)
-		{
-			DrawDebugLine(GetWorld(), LastTile->TileLocation + offset, CurrentTile->TileLocation + offset, FColor::Emerald);
-		}
-		else
-		{
-			FVector PawnLoc = GetPawn()->GetActorLocation();
-			PawnLoc.Z = CurrentTile->TileLocation.Z;
-			DrawDebugLine(GetWorld(), PawnLoc + offset, CurrentTile->TileLocation + offset, FColor::Emerald);
-		}
-		LastTile = PathToDestTile[i];
-	}
-}

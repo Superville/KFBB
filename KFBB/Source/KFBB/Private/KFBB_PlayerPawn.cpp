@@ -103,6 +103,9 @@ void AKFBB_PlayerPawn::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Out
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
 	DOREPLIFETIME(AKFBB_PlayerPawn, TeamID);
+
+	DOREPLIFETIME(AKFBB_PlayerPawn, RepDestinationTile);
+	DOREPLIFETIME(AKFBB_PlayerPawn, RepPathToDestTile);
 }
 
 bool AKFBB_PlayerPawn::IsMyCoach(AKFBB_CoachPC* inCoach) const
@@ -168,7 +171,10 @@ void AKFBB_PlayerPawn::RegisterWithTile(UKFBB_FieldTile* Tile)
 		if (PlayerAlreadyOnTile != nullptr)
 		{
 			auto GM = Cast<AKFBBGameModeBase>(GetWorld()->GetAuthGameMode());
-			GM->ResolveCollision(PlayerAlreadyOnTile, this);
+			if (GM)
+			{
+				GM->ResolveCollision(PlayerAlreadyOnTile, this);
+			}
 		}
 	}
 }
@@ -304,7 +310,7 @@ void AKFBB_PlayerPawn::KnockDown(FTileDir dir)
 	auto AI = Cast<AKFBB_AIController>(Controller);
 	if (AI != nullptr)
 	{
-		AI->SetDestination(Field->GetAdjacentTile(CurrentTile, dir));
+		AI->MarkDestinationTile(Field->GetAdjacentTile(CurrentTile, dir));
 	}
 
 	SetStatus(EKFBB_PlayerState::KnockedDown);
@@ -409,14 +415,44 @@ void AKFBB_PlayerPawn::FumbleBall(AKFBB_Ball* BallToFumble)
 	BallToFumble->FumbleBall(destTile);
 }
 
-void AKFBB_PlayerPawn::DrawDebugPath() const
+void AKFBB_PlayerPawn::SetDestinationTile(UKFBB_FieldTile* Tile)
 {
-	AKFBB_AIController* C = Cast<AKFBB_AIController>(Controller);
-	if (C != nullptr)
-	{
-		C->DrawDebugPath();
-	}
+	DestinationTile = Tile;
+	RepDestinationTile = DestinationTile ? DestinationTile->TileIdx : -1;
 }
+
+void AKFBB_PlayerPawn::ClearDestinationTile()
+{
+	DestinationTile = nullptr;
+	RepDestinationTile = -1;
+}
+
+void AKFBB_PlayerPawn::SetPathToDestTile(TArray<UKFBB_FieldTile*> PathToDest)
+{
+	if (!Field) return;
+	PathToDestTile = PathToDest;
+	Field->ConvertArrayTileToIndex(PathToDestTile, RepPathToDestTile);
+}
+
+void AKFBB_PlayerPawn::ClearPathToDestTile()
+{
+	PathToDestTile.Empty();
+	RepPathToDestTile.Empty();
+}
+
+void AKFBB_PlayerPawn::OnRep_DestinationTile()
+{
+	if (!Field) { return; }
+	DestinationTile = Field->GetTileByIndex(RepDestinationTile);
+}
+
+void AKFBB_PlayerPawn::OnRep_PathToDestTile()
+{
+	if (!Field) { return; }
+	Field->ConvertArrayIndexToTile(RepPathToDestTile, PathToDestTile);
+}
+
+
 
 void AKFBB_PlayerPawn::DrawDebugCurrentTile() const
 {
@@ -510,4 +546,27 @@ void AKFBB_PlayerPawn::OnRep_TeamID()
 uint8 AKFBB_PlayerPawn::GetDisplayTeamID() const
 {
 	return DisplayTeamID;
+}
+
+void AKFBB_PlayerPawn::DrawDebugPath() const
+{
+	FVector offset(0, 0, 2);
+	UKFBB_FieldTile* LastTile = nullptr;
+
+	for (int i = 0; i < PathToDestTile.Num(); i++)
+	{
+		auto Tile = PathToDestTile[i];
+		Tile->DrawDebugTileOverride(offset, 0.25f, FColor::Emerald);
+		if (LastTile != nullptr)
+		{
+			DrawDebugLine(GetWorld(), LastTile->TileLocation + offset, Tile->TileLocation + offset, FColor::Emerald);
+		}
+		else
+		{
+			FVector PawnLoc = GetActorLocation();
+			PawnLoc.Z = Tile->TileLocation.Z;
+			DrawDebugLine(GetWorld(), PawnLoc + offset, Tile->TileLocation + offset, FColor::Emerald);
+		}
+		LastTile = PathToDestTile[i];
+	}
 }

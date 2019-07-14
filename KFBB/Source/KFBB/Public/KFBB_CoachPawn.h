@@ -3,17 +3,20 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "GameFramework/Pawn.h"
+#include "GameFramework/Character.h"
+//#include "GameFramework/Pawn.h"
 #include "KFBB_CoachPawn.generated.h"
 
+class UKFBBCoachMovementComponent;
+
 UCLASS()
-class KFBB_API AKFBB_CoachPawn : public APawn
+class KFBB_API AKFBB_CoachPawn : public ACharacter //APawn
 {
 	GENERATED_BODY()
 
 public:
 	// Sets default values for this pawn's properties
-	AKFBB_CoachPawn();
+	AKFBB_CoachPawn(const FObjectInitializer& ObjectInitializer);
 
 protected:
 	// Called when the game starts or when spawned

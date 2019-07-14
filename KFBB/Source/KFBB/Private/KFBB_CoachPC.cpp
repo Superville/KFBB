@@ -6,6 +6,8 @@
 #include "Engine.h"
 #include "AIController.h"
 #include "EngineUtils.h"
+#include "TimerManager.h"
+#include "UnrealNetwork.h"
 #include "DrawDebugHelpers.h"
 
 // KFBB Includes
@@ -26,12 +28,47 @@ void AKFBB_CoachPC::BeginPlay()
 	SetTeamID(0);
 }
 
+void AKFBB_CoachPC::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	DOREPLIFETIME(AKFBB_CoachPC, bReadyToStart);
+
+	DOREPLIFETIME(AKFBB_CoachPC, RepSelectedTileList);
+	DOREPLIFETIME(AKFBB_CoachPC, RepSelectedTile);
+	DOREPLIFETIME(AKFBB_CoachPC, RepDestinationTile);
+
+	DOREPLIFETIME(AKFBB_CoachPC, SelectedPlayer);
+	DOREPLIFETIME(AKFBB_CoachPC, PrevSelectedPlayer);
+}
+
+void AKFBB_CoachPC::OnRep_SelectedTileList()
+{
+	if (!Field) { return; }
+	Field->ConvertArrayIndexToTile(RepSelectedTileList, SelectedTileList);
+}
+
+void AKFBB_CoachPC::OnRep_SelectedTile()
+{
+	if (!Field) { return; }
+	SelectedTile = Field->GetTileByIndex(RepSelectedTile);
+}
+
+void AKFBB_CoachPC::OnRep_DestinationTile()
+{
+	if (!Field) { return; }
+	DestinationTile = Field->GetTileByIndex(RepDestinationTile);
+}
+
 void AKFBB_CoachPC::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
 	UpdateDisplayTileUnderMouse();
 	CheckDragPath();
+	//test
+	UpdatePotentialMoveList();
+
 
 	DrawPotentialMoveList();
 	DrawSelectedPlayer();
@@ -94,31 +131,58 @@ AKFBB_PlayerPawn* AKFBB_CoachPC::GetSelectedPlayer() const
 
 void AKFBB_CoachPC::PlayerTouchScreen()
 {
-	UKFBB_FieldTile* Tile = GetTileUnderMouse();
-	AKFBB_PlayerPawn* PlayerOnTile = Tile ? Tile->GetPlayer() : nullptr;
+	UKFBB_FieldTile* MouseTile = GetTileUnderMouse();
+	AKFBB_PlayerPawn* PlayerOnTile = MouseTile ? MouseTile->GetPlayer() : nullptr;
 
+	bool bBeginDrag = false;
 	if (!PlayerOnTile || PlayerOnTile->CanAcceptCommand())
 	{
-		BeginDragTouch(Tile);
+		bBeginDrag = BeginDragTouch(MouseTile);
 	}
+
+	ServerTouchScreen(MouseTile ? MouseTile->TileIdx : -1, bBeginDrag);
+}
+
+void AKFBB_CoachPC::ServerTouchScreen_Implementation(int TileIdx, bool bBeginDrag)
+{
+	if (!Field) { return; }
+
+	UKFBB_FieldTile* MouseTile = Field->GetTileByIndex(TileIdx);
+	AKFBB_PlayerPawn* PlayerOnTile = MouseTile ? MouseTile->GetPlayer() : nullptr;
+
+	if (bBeginDrag)
+	{
+		SetDragInfo(MouseTile);
+	}
+
 	if (PlayerOnTile)
 	{
 		SetSelectedPlayer(PlayerOnTile);
 	}
 }
+bool AKFBB_CoachPC::ServerTouchScreen_Validate(int TileIdx, bool bBeginDrag) { return true; }
 
 void AKFBB_CoachPC::PlayerUntouchScreen()
 {
-	UKFBB_FieldTile* Tile = GetTileUnderMouse();
-	bool bDidDragPath = StartDragTile && Tile != StartDragTile && SelectedTileList.Num() > 0;
-	
+	UKFBB_FieldTile* MouseTile = GetTileUnderMouse();
+	ServerPlayerUntouchScreen(MouseTile ? MouseTile->TileIdx : -1);
+	EndDragTouch(MouseTile);
+}
+
+void AKFBB_CoachPC::ServerPlayerUntouchScreen_Implementation(int TileIdx)
+{
+	if (!Field) { return; }
+
+	UKFBB_FieldTile* MouseTile = Field->GetTileByIndex(TileIdx);
+	bool bDidDragPath = StartDragTile && MouseTile != StartDragTile && SelectedTileList.Num() > 0;
+
 	if (!bDidDragPath && SelectedPlayer)
 	{
-		bool bOnSelectedTile = SelectedTile && Tile == SelectedTile;
-		bool bOnSelectedPlayer = Tile == SelectedPlayer->CurrentTile;
+		bool bOnSelectedTile = SelectedTile && MouseTile == SelectedTile;
+		bool bOnSelectedPlayer = MouseTile == SelectedPlayer->CurrentTile;
 		if (bOnSelectedTile && !bOnSelectedPlayer)
 		{
-			SetDestinationTile(Tile);
+			SetDestinationTile(MouseTile);
 			ConfirmCommand();
 			ClearSelectedPlayer();
 		}
@@ -126,43 +190,57 @@ void AKFBB_CoachPC::PlayerUntouchScreen()
 		{
 			ClearSelectedPlayer();
 		}
-		else if(!bOnSelectedPlayer && SelectedPlayer && SelectedPlayer->CanAcceptCommand())
+		else if (!bOnSelectedPlayer && SelectedPlayer && SelectedPlayer->CanAcceptCommand())
 		{
-			if (PotentialMoveList.Find(Tile) == INDEX_NONE)
+			if (PotentialMoveList.Find(MouseTile) == INDEX_NONE)
 			{
 				ClearTileSelection();
 				if (!SelectedTile && !bOnSelectedPlayer)
 				{
-					SetSelectedTile(Tile);
+					MarkSelectedTile(MouseTile);
 				}
 			}
 			else
 			{
-				int TileIdx = SelectedTileList.Find(Tile);
-				if (TileIdx == INDEX_NONE)
+				int SelectedTileIdx = SelectedTileList.Find(MouseTile);
+				if (SelectedTileIdx == INDEX_NONE)
 				{
-					AddToPath(Tile);
+					AddToPath(MouseTile);
 				}
 				else
 				{
-					SelectedTileList.RemoveAt(TileIdx + 1, SelectedTileList.Num() - (TileIdx + 1));
-					SetSelectedTile(SelectedTileList);
+					SelectedTileList.RemoveAt(SelectedTileIdx + 1, SelectedTileList.Num() - (SelectedTileIdx + 1));
+					MarkSelectedTileList(SelectedTileList);
 				}
 			}
 		}
 	}
 
-	EndDragTouch(Tile);
+	EndDragTouch(MouseTile);
 }
 
-void AKFBB_CoachPC::BeginDragTouch(UKFBB_FieldTile* Tile)
+bool AKFBB_CoachPC::ServerPlayerUntouchScreen_Validate(int TileIdx) { return true; }
+
+bool AKFBB_CoachPC::BeginDragTouch(UKFBB_FieldTile* Tile)
+{
+	if (bIsDragging) { return false; }
+	SetDragInfo(Tile);	
+	return true;
+}
+
+void AKFBB_CoachPC::EndDragTouch(UKFBB_FieldTile* Tile)
+{
+	ClearDragInfo();
+}
+
+void AKFBB_CoachPC::SetDragInfo(UKFBB_FieldTile* Tile)
 {
 	StartDragTile = Tile;
 	bIsDragging = true;
 	bIsDraggingPath = Tile ? Tile->HasPlayer() : false;
 }
 
-void AKFBB_CoachPC::EndDragTouch(UKFBB_FieldTile* Tile)
+void AKFBB_CoachPC::ClearDragInfo()
 {
 	bIsDragging = false;
 	bIsDraggingPath = false;
@@ -174,10 +252,19 @@ void AKFBB_CoachPC::CheckDragPath()
 	if (!bIsDraggingPath) { return; }
 
 	auto MouseTile = GetTileUnderMouse(MouseUnderTileScalar);
+	ServerUpdateDragPath(MouseTile ? MouseTile->TileIdx : -1);
+}
+
+void AKFBB_CoachPC::ServerUpdateDragPath_Implementation(int TileIdx)
+{
+	if (!Field) { return; }
+	
+	UKFBB_FieldTile* MouseTile = Field->GetTileByIndex(TileIdx);
 	if (MouseTile == StartDragTile) { return; }
 
 	AddToPath(MouseTile);
 }
+bool AKFBB_CoachPC::ServerUpdateDragPath_Validate(int TileIdx) { return true; }
 
 void AKFBB_CoachPC::AddToPath(UKFBB_FieldTile* Tile)
 {
@@ -203,7 +290,7 @@ void AKFBB_CoachPC::AddToPath(UKFBB_FieldTile* Tile)
 
 	if (bSuccess)
 	{
-		SetSelectedTile(SelectedTileList);
+		MarkSelectedTileList(SelectedTileList);
 	}
 }
 
@@ -241,48 +328,106 @@ void AKFBB_CoachPC::UpdatePotentialMoveList()
 	}
 }
 
-void AKFBB_CoachPC::SetSelectedTile(UKFBB_FieldTile* t)
+void AKFBB_CoachPC::MarkSelectedTile(UKFBB_FieldTile* Tile)
 {
-	SelectedTile = t;
-
-	if (!SelectedAI || !SelectedTile) { return; }
-
-	bool bSuccess = SelectedAI->SetDestination(SelectedTile);
-	if (!bSuccess)
+	if (!Tile)
 	{
-		SelectedAI->ClearDestination();
-		SelectedTile = nullptr;
+		ClearSelectedTile();
+		return;
 	}
-	SelectedTileList = SelectedAI->PathToDestTile;
-	UpdatePotentialMoveList();
+
+	SetSelectedTile(Tile);
+	if (SelectedAI)
+	{
+		bool bSuccess = SelectedAI->MarkDestinationTile(SelectedTile);
+		if (!bSuccess)
+		{
+			SelectedAI->ClearDestination();
+			SelectedTile = nullptr;
+		}
+		SelectedTileList = SelectedAI->GetDestinationPath();
+	}
+	
+//test	UpdatePotentialMoveList();
 }
 
-void AKFBB_CoachPC::SetSelectedTile(TArray<UKFBB_FieldTile*>& ProvidedPath)
+void AKFBB_CoachPC::SetSelectedTile(UKFBB_FieldTile* Tile)
 {
-	SelectedTile = ProvidedPath.Num() > 0 ? ProvidedPath.Last() : nullptr;
+	if (!Tile) 
+	{ 
+		ClearSelectedTile();
+		return; 
+	}
+	SelectedTile = Tile;
+	RepSelectedTile = Tile->TileIdx;
+}
 
-	if (!SelectedAI || !SelectedTile) { return; }
+void AKFBB_CoachPC::ClearSelectedTile()
+{
+	SelectedTile = nullptr;
+	RepSelectedTile = -1;
+}
 
-	bool bSuccess = SelectedAI->SetDestination(ProvidedPath);
-	UpdatePotentialMoveList();
+void AKFBB_CoachPC::MarkSelectedTileList(TArray<UKFBB_FieldTile*>& ProvidedPath)
+{
+	if (!Field) { return; }
+
+	SetSelectedTile(ProvidedPath.Num() > 0 ? ProvidedPath.Last() : nullptr);
+	SetSelectedTileList(ProvidedPath);
+	if (SelectedAI)
+	{
+		bool bSuccess = SelectedAI->MarkDestinationPath(ProvidedPath);
+//test	UpdatePotentialMoveList();
+	}
+}
+
+void AKFBB_CoachPC::SetSelectedTileList(TArray<UKFBB_FieldTile*>& TileList)
+{
+	if (!Field) return;
+	SelectedTileList = TileList;
+	Field->ConvertArrayTileToIndex(TileList, RepSelectedTileList);
+}
+
+void AKFBB_CoachPC::ClearSelectedTileList()
+{
+	SelectedTileList.Empty();
+	RepSelectedTileList.Empty();
 }
 
 void AKFBB_CoachPC::SetDestinationTile(UKFBB_FieldTile* t)
 {
 	DestinationTile = t;
+	RepDestinationTile = DestinationTile ? DestinationTile->TileIdx : -1;
 }
+
+void AKFBB_CoachPC::ClearDestinationTile()
+{
+	DestinationTile = nullptr;
+	RepDestinationTile = -1;
+}
+
+void AKFBB_CoachPC::BP_ClearTileSelection(bool bClearAI)
+{
+	ServerClearTileSelection(bClearAI);
+}
+
+void AKFBB_CoachPC::ServerClearTileSelection_Implementation(bool bClearAI)
+{
+	ClearTileSelection(bClearAI);
+}
+bool AKFBB_CoachPC::ServerClearTileSelection_Validate(bool bClearAI) { return true; }
 
 void AKFBB_CoachPC::ClearTileSelection(bool bClearAI)
 {
-	SelectedTile = nullptr;
-	DestinationTile = nullptr;
-	SelectedTileList.Empty();
+	ClearDestinationTile();
+	ClearSelectedTile();
+	ClearSelectedTileList();
 
 	if (SelectedAI && bClearAI)
 	{
 		SelectedAI->ClearDestination();
 	}
-	UpdatePotentialMoveList();
+//test	UpdatePotentialMoveList();
 }
 
 void AKFBB_CoachPC::ConfirmCommand()
@@ -303,7 +448,7 @@ void AKFBB_CoachPC::ConfirmCommand()
 	}
 }
 
-void AKFBB_CoachPC::SpawnPlayerOnTile(uint8 teamID)
+void AKFBB_CoachPC::SpawnPlayerOnTileUnderMouse(uint8 teamID)
 {
 	int x = 0, y = 0;
 	UKFBB_FieldTile* Tile = GetTileUnderMouse();
@@ -316,30 +461,29 @@ void AKFBB_CoachPC::SpawnPlayerOnTile(uint8 teamID)
 	SpawnPlayerOnTile(x, y, teamID);
 }
 
-void AKFBB_CoachPC::SpawnPlayerOnTile(int x, int y, uint8 teamID)
+void AKFBB_CoachPC::SpawnPlayerOnTile_Implementation(int x, int y, uint8 teamID)
 {
-	if (PlayerClass == nullptr)
-		return;
-
 	auto World = GetWorld();
+	auto KFGM = Cast<AKFBBGameModeBase>(World->GetAuthGameMode());
+	if (!Field || !KFGM) { return; }
+
+	auto PlayerClass = KFGM->GetDefaultPlayerClass();
+	if (!PlayerClass) { return; }
 
 	FTransform SpawnTrans;
-	SpawnTrans.SetLocation(Field->GetFieldTileLocation(x, y) + FVector(0, 0, PlayerSpawnOffsetZ));
+	SpawnTrans.SetLocation(Field->GetFieldTileLocation(x, y) + FVector(0, 0, Field->PlayerSpawnOffsetZ));
 	FActorSpawnParameters SpawnParams;
 	SpawnParams.bNoFail = true;
 
 	AKFBB_PlayerPawn* P = World->SpawnActor<AKFBB_PlayerPawn>(PlayerClass, SpawnTrans, SpawnParams);
 	if (P)
 	{
-		auto KFGM = Cast<AKFBBGameModeBase>(GetWorld()->GetAuthGameMode());
-		if (KFGM)
-		{
-			KFGM->RegisterTeamMember(P, teamID);
-		}
+		KFGM->RegisterTeamMember(P, teamID);
 	}
 }
+bool AKFBB_CoachPC::SpawnPlayerOnTile_Validate(int x, int y, uint8 teamID) { return true; }
 
-void AKFBB_CoachPC::SpawnBallOnTile()
+void AKFBB_CoachPC::SpawnBallOnTileUnderMouse()
 {
 	int x = 0, y = 0;
 	UKFBB_FieldTile* Tile = GetTileUnderMouse();
@@ -352,20 +496,23 @@ void AKFBB_CoachPC::SpawnBallOnTile()
 	SpawnBallOnTile(x, y);
 }
 
-void AKFBB_CoachPC::SpawnBallOnTile(int x, int y)
+void AKFBB_CoachPC::SpawnBallOnTile_Implementation(int x, int y)
 {
-	if (BallClass == nullptr)
-		return;
-
 	auto World = GetWorld();
+	auto KFGM = Cast<AKFBBGameModeBase>(World->GetAuthGameMode());
+	if (!Field || !KFGM) { return; }
 
+	auto BallClass = KFGM->GetDefaultBallClass();
+	if (!BallClass) { return; }
+	
 	FTransform SpawnTrans;
-	SpawnTrans.SetLocation(Field->GetFieldTileLocation(x, y) + FVector(0, 0, PlayerSpawnOffsetZ));
+	SpawnTrans.SetLocation(Field->GetFieldTileLocation(x, y) + FVector(0, 0, Field->PlayerSpawnOffsetZ));
 	FActorSpawnParameters SpawnParams;
 	SpawnParams.bNoFail = true;
 
 	AKFBB_Ball* P = World->SpawnActor<AKFBB_Ball>(BallClass, SpawnTrans, SpawnParams);
 }
+bool AKFBB_CoachPC::SpawnBallOnTile_Validate(int x, int y) { return true; }
 
 void AKFBB_CoachPC::DrawPotentialMoveList()
 {
@@ -404,6 +551,20 @@ void AKFBB_CoachPC::DrawDebugTouchedTile(UKFBB_FieldTile* t)
 
 	DrawDebugBox(MyWorld, t->TileLocation + FVector(0, 0, 2), FVector(Field->TileSize, Field->TileSize, 0) * 0.5f, color, false, 1.f);
 }
+
+bool AKFBB_CoachPC::IsReadyToStart()
+{
+	//test
+	return true;
+	return bReadyToStart;
+}
+
+void AKFBB_CoachPC::ToggleReadyToStart_Implementation()
+{
+	bReadyToStart = !bReadyToStart;
+}
+
+bool AKFBB_CoachPC::ToggleReadyToStart_Validate() { return true; }
 
 uint8 AKFBB_CoachPC::GetTeamID() const
 {

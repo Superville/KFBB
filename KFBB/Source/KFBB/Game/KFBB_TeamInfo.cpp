@@ -115,6 +115,11 @@ void AKFBB_TeamInfo::SpawnPlayers()
 	for (int i = 0; i < MemberList.Num(); i++)
 	{
 		FTeamMember& TM = MemberList[i];
+		if (!TM.SpawnTile)
+		{
+			TM.SpawnTile = Field->GetTileByXY(TM.SpawnTileX, TM.SpawnTileY);
+		}
+
 		if (!TM.SpawnTile) { continue; }
 
 		auto PawnClass = KFGM->GetPawnClassByID(TM.TypeID);
@@ -145,7 +150,7 @@ void AKFBB_TeamInfo::SpawnPlayers()
 
 void AKFBB_TeamInfo::RegisterCoach(AKFBB_CoachPC* PC)
 {
-	if (!PC || GetCoachIndex(PC) >= 0) { return; }
+	if (!PC) { return; }
 	CoachList.AddUnique(PC);
 	PC->TeamID = TeamID;
 }
