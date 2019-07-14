@@ -172,14 +172,17 @@ public:
 	UFUNCTION(BlueprintCallable)
 	virtual bool IsPlayerOnCooldown();
 
-	UFUNCTION(BlueprintCallable, Category = "Grid Pathing")
+	UFUNCTION(BlueprintCallable, Category = "KFBB | Grid Pathing")
 	virtual bool CanAcceptCommand();
 	virtual void NotifyCommandFailed();
 
-	UFUNCTION(BlueprintCallable, Category = "Grid Pathing")
+	UFUNCTION(BlueprintCallable, Category = "KFBB | Grid Pathing")
 	virtual void NotifyReachedGrid();
-	UFUNCTION(BlueprintCallable, Category = "Grid Pathing")
+	UFUNCTION(BlueprintCallable, Category = "KFBB | Grid Pathing")
 	virtual void NotifyReachedDestinationGrid();
+	UFUNCTION(BlueprintCallable, Category = "KFBB | Grid Pathing")
+	void RemoveFirstGrid();
+
 
 	virtual void NotifyHit(UPrimitiveComponent* MyComp, AActor* Other, UPrimitiveComponent* OtherComp, bool bSelfMoved, FVector HitLocation, FVector HitNormal, FVector NormalImpulse, const FHitResult& Hit) override;
 	virtual void KnockDown(FTileDir dir);

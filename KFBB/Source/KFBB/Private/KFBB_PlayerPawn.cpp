@@ -293,6 +293,13 @@ void AKFBB_PlayerPawn::NotifyReachedDestinationGrid()
 	AI->ClearDestination();
 }
 
+void AKFBB_PlayerPawn::RemoveFirstGrid()
+{
+	if (PathToDestTile.Num() <= 0) { return; }
+	PathToDestTile.RemoveAt(0);
+	RepPathToDestTile.RemoveAt(0);
+}
+
 void AKFBB_PlayerPawn::NotifyHit(class UPrimitiveComponent* MyComp, AActor* Other, class UPrimitiveComponent* OtherComp, bool bSelfMoved, FVector HitLocation, FVector HitNormal, FVector NormalImpulse, const FHitResult& Hit)
 {
 	Super::NotifyHit(MyComp, Other, OtherComp, bSelfMoved, HitLocation, HitNormal, NormalImpulse, Hit);
