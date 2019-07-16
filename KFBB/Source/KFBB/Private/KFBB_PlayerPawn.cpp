@@ -56,6 +56,11 @@ void AKFBB_PlayerPawn::GrantAbility(TSubclassOf<UGameplayAbility> Ability)
 	}	
 }
 
+int32 AKFBB_PlayerPawn::GetStat_Movement()
+{
+	return AttribSet ? AttribSet->Stat_Movement.GetCurrentValue() : 0;
+}
+
 // Called when the game starts or when spawned
 void AKFBB_PlayerPawn::BeginPlay()
 {
@@ -75,9 +80,9 @@ void AKFBB_PlayerPawn::Tick(float DeltaTime)
 	if(IsPlayerOnCooldown())
 	{
 		CooldownTimer -= DeltaTime;
-		if (CurrentTile != nullptr)
+		if (CurrentTile.IsValid())
 		{
-			CurrentTile->DrawCooldownTimer(CooldownDuration, CooldownTimer, GetCooldownColor());
+			GetCurrentTile()->DrawCooldownTimer(CooldownDuration, CooldownTimer, GetCooldownColor());
 		}
 
 		if (CooldownTimer <= 0.f)
@@ -104,8 +109,8 @@ void AKFBB_PlayerPawn::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Out
 
 	DOREPLIFETIME(AKFBB_PlayerPawn, TeamID);
 
-	DOREPLIFETIME(AKFBB_PlayerPawn, RepDestinationTile);
-	DOREPLIFETIME(AKFBB_PlayerPawn, RepPathToDestTile);
+	DOREPLIFETIME(AKFBB_PlayerPawn, DestinationTile);
+	DOREPLIFETIME(AKFBB_PlayerPawn, PathToDestTile);
 }
 
 bool AKFBB_PlayerPawn::IsMyCoach(AKFBB_CoachPC* inCoach) const
@@ -126,6 +131,26 @@ bool AKFBB_PlayerPawn::IsMyCoach(AKFBB_CoachPC* inCoach) const
 bool AKFBB_PlayerPawn::IsSameTeam(AKFBB_PlayerPawn* Other) const
 {
 	return Other ? GetTeamID() == Other->GetTeamID() : false;
+}
+
+AKFBB_Field* AKFBB_PlayerPawn::GetField() const
+{
+	return Field;
+}
+
+UKFBB_FieldTile* AKFBB_PlayerPawn::GetCurrentTile() const
+{
+	return Field ? Field->GetTileByInfo(CurrentTile) : nullptr;
+}
+
+UKFBB_FieldTile* AKFBB_PlayerPawn::GetPreviousTile() const
+{
+	return Field ? Field->GetTileByInfo(PreviousTile) : nullptr;
+}
+
+UKFBB_FieldTile* AKFBB_PlayerPawn::GetNextTile() const
+{
+	return Field ? Field->GetTileByInfo(NextTile) : nullptr;
 }
 
 bool AKFBB_PlayerPawn::CanBeSelected(AKFBB_CoachPC* inCoach) const
@@ -154,20 +179,20 @@ void AKFBB_PlayerPawn::RegisterWithTile(UKFBB_FieldTile* Tile)
 	if (CurrentTile != Tile)
 	{
 		auto PlayerAlreadyOnTile = Tile ? Tile->GetPlayer() : nullptr;
-
-		if (CurrentTile != nullptr) 
+		if (CurrentTile.IsValid())
 		{ 
-			CurrentTile->UnRegisterActor(this); 
+			GetCurrentTile()->UnRegisterActor(this); 
 		}
 		
 		PreviousTile = CurrentTile;
 		CurrentTile = Tile;
 		
-		if (CurrentTile != nullptr) 
+		if (CurrentTile.IsValid()) 
 		{ 
-			CurrentTile->RegisterActor(this); 
+			GetCurrentTile()->RegisterActor(this); 
 		}
 
+		//todo - convert this to using GAS / tags
 		if (PlayerAlreadyOnTile != nullptr)
 		{
 			auto GM = Cast<AKFBBGameModeBase>(GetWorld()->GetAuthGameMode());
@@ -264,7 +289,9 @@ void AKFBB_PlayerPawn::NotifyCommandFailed()
 
 void AKFBB_PlayerPawn::NotifyReachedGrid()
 {
-	auto BallOnTile = CurrentTile->GetBall();
+	if (!CurrentTile.IsValid()) { return; }
+
+	auto BallOnTile = GetCurrentTile()->GetBall();
 	if (BallOnTile && AbilitySystemComponent)
 	{
 		if (AbilitySystemComponent->GetTagCount(HasBallTag) == 0 &&
@@ -293,11 +320,16 @@ void AKFBB_PlayerPawn::NotifyReachedDestinationGrid()
 	AI->ClearDestination();
 }
 
+UKFBB_FieldTile* AKFBB_PlayerPawn::GetFirstGrid() const
+{
+	if (!Field || PathToDestTile.Num() <= 0) { return nullptr; }
+	return Field->GetTileByInfo(PathToDestTile[0]);
+}
+
 void AKFBB_PlayerPawn::RemoveFirstGrid()
 {
 	if (PathToDestTile.Num() <= 0) { return; }
 	PathToDestTile.RemoveAt(0);
-	RepPathToDestTile.RemoveAt(0);
 }
 
 void AKFBB_PlayerPawn::NotifyHit(class UPrimitiveComponent* MyComp, AActor* Other, class UPrimitiveComponent* OtherComp, bool bSelfMoved, FVector HitLocation, FVector HitNormal, FVector NormalImpulse, const FHitResult& Hit)
@@ -317,7 +349,7 @@ void AKFBB_PlayerPawn::KnockDown(FTileDir dir)
 	auto AI = Cast<AKFBB_AIController>(Controller);
 	if (AI != nullptr)
 	{
-		AI->MarkDestinationTile(Field->GetAdjacentTile(CurrentTile, dir));
+//		AI->MarkDestinationTile(Field->GetAdjacentTile(CurrentTile, dir));
 	}
 
 	SetStatus(EKFBB_PlayerState::KnockedDown);
@@ -326,7 +358,6 @@ void AKFBB_PlayerPawn::KnockDown(FTileDir dir)
 void AKFBB_PlayerPawn::SetStatus(EKFBB_PlayerState::Type newStatus)
 {
 	Status = newStatus;
-	TestStatus = Status;
 
 	auto AI = Cast<AKFBB_AIController>(Controller);
 	
@@ -411,62 +442,52 @@ void AKFBB_PlayerPawn::AttachBall(AKFBB_Ball* BallToAttach)
 void AKFBB_PlayerPawn::FumbleBall(AKFBB_Ball* BallToFumble)
 {
 	if (!BallToFumble || 
-		!CurrentTile || 
+		!CurrentTile.IsValid() || 
 		!Field || 
 		!AbilitySystemComponent)
 	{
 		return;
 	}
 
-	auto destTile = Field->GetAdjacentTile(CurrentTile, Field->GetScatterDirection(0, 0, 4));
+	auto destTile = Field->GetAdjacentTile(GetCurrentTile(), Field->GetScatterDirection(0, 0, 4));
 	BallToFumble->FumbleBall(destTile);
 }
 
-void AKFBB_PlayerPawn::SetDestinationTile(UKFBB_FieldTile* Tile)
+UKFBB_FieldTile* AKFBB_PlayerPawn::GetDestinationTile() const
 {
-	DestinationTile = Tile;
-	RepDestinationTile = DestinationTile ? DestinationTile->TileIdx : -1;
+	return Field ? Field->GetTileByInfo(DestinationTile) : nullptr;
+}
+
+void AKFBB_PlayerPawn::SetDestinationTile(FTileInfo TileRepInfo)
+{
+	DestinationTile = TileRepInfo;
 }
 
 void AKFBB_PlayerPawn::ClearDestinationTile()
 {
-	DestinationTile = nullptr;
-	RepDestinationTile = -1;
+	DestinationTile.Clear();
 }
 
-void AKFBB_PlayerPawn::SetPathToDestTile(TArray<UKFBB_FieldTile*> PathToDest)
+bool AKFBB_PlayerPawn::HasPathToDestTile()
 {
-	if (!Field) return;
-	PathToDestTile = PathToDest;
-	Field->ConvertArrayTileToIndex(PathToDestTile, RepPathToDestTile);
+	return (PathToDestTile.Num() > 0);
+}
+
+void AKFBB_PlayerPawn::SetPathToDestTile(TArray<FTileInfo>& InPathToDest)
+{
+	PathToDestTile = InPathToDest;
 }
 
 void AKFBB_PlayerPawn::ClearPathToDestTile()
 {
 	PathToDestTile.Empty();
-	RepPathToDestTile.Empty();
 }
-
-void AKFBB_PlayerPawn::OnRep_DestinationTile()
-{
-	if (!Field) { return; }
-	DestinationTile = Field->GetTileByIndex(RepDestinationTile);
-}
-
-void AKFBB_PlayerPawn::OnRep_PathToDestTile()
-{
-	if (!Field) { return; }
-	Field->ConvertArrayIndexToTile(RepPathToDestTile, PathToDestTile);
-}
-
-
 
 void AKFBB_PlayerPawn::DrawDebugCurrentTile() const
 {
-	if (Field == nullptr || CurrentTile == nullptr)
-		return;
+	if (Field == nullptr || !CurrentTile.IsValid()) { return; }
 
-	CurrentTile->DrawDebugTile(FVector(0, 0, 2));
+	GetCurrentTile()->DrawDebugTile(FVector(0, 0, 2));
 }
 
 void AKFBB_PlayerPawn::DrawDebugStatus() const
@@ -562,7 +583,8 @@ void AKFBB_PlayerPawn::DrawDebugPath() const
 
 	for (int i = 0; i < PathToDestTile.Num(); i++)
 	{
-		auto Tile = PathToDestTile[i];
+		auto Tile = Field->GetTileByInfo(PathToDestTile[i]);
+		if (!Tile) { continue; }
 		Tile->DrawDebugTileOverride(offset, 0.25f, FColor::Emerald);
 		if (LastTile != nullptr)
 		{
@@ -574,6 +596,6 @@ void AKFBB_PlayerPawn::DrawDebugPath() const
 			PawnLoc.Z = Tile->TileLocation.Z;
 			DrawDebugLine(GetWorld(), PawnLoc + offset, Tile->TileLocation + offset, FColor::Emerald);
 		}
-		LastTile = PathToDestTile[i];
+		LastTile = Tile;
 	}
 }

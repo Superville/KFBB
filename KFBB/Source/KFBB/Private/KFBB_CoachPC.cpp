@@ -34,44 +34,27 @@ void AKFBB_CoachPC::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLif
 
 	DOREPLIFETIME(AKFBB_CoachPC, bReadyToStart);
 
-	DOREPLIFETIME(AKFBB_CoachPC, RepSelectedTileList);
-	DOREPLIFETIME(AKFBB_CoachPC, RepSelectedTile);
-	DOREPLIFETIME(AKFBB_CoachPC, RepDestinationTile);
+	DOREPLIFETIME(AKFBB_CoachPC, SelectedTileList);
+	DOREPLIFETIME(AKFBB_CoachPC, SelectedTile);
+	DOREPLIFETIME(AKFBB_CoachPC, DestinationTile);
 
 	DOREPLIFETIME(AKFBB_CoachPC, SelectedPlayer);
 	DOREPLIFETIME(AKFBB_CoachPC, PrevSelectedPlayer);
-}
-
-void AKFBB_CoachPC::OnRep_SelectedTileList()
-{
-	if (!Field) { return; }
-	Field->ConvertArrayIndexToTile(RepSelectedTileList, SelectedTileList);
-}
-
-void AKFBB_CoachPC::OnRep_SelectedTile()
-{
-	if (!Field) { return; }
-	SelectedTile = Field->GetTileByIndex(RepSelectedTile);
-}
-
-void AKFBB_CoachPC::OnRep_DestinationTile()
-{
-	if (!Field) { return; }
-	DestinationTile = Field->GetTileByIndex(RepDestinationTile);
 }
 
 void AKFBB_CoachPC::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-	UpdateDisplayTileUnderMouse();
-	CheckDragPath();
-	//test
-	UpdatePotentialMoveList();
+	if (IsLocalPlayerController())
+	{
+		UpdateDisplayTileUnderMouse();
+		CheckDragPath();
+		UpdatePotentialMoveList();
 
-
-	DrawPotentialMoveList();
-	DrawSelectedPlayer();
+		DrawPotentialMoveList();
+		DrawSelectedPlayer();
+	}
 
 	DrawDebug(DeltaTime);
 }
@@ -122,11 +105,8 @@ UKFBB_FieldTile* AKFBB_CoachPC::GetTileUnderMouse(float ReqDistFromCenterScale)
 
 AKFBB_PlayerPawn* AKFBB_CoachPC::GetSelectedPlayer() const
 {
-	if (SelectedTile != nullptr)
-	{
-		return SelectedTile->GetPlayer();
-	}
-	return nullptr;
+	auto Tile = GetSelectedTile();
+	return Tile ? Tile->GetPlayer() : nullptr;
 }
 
 void AKFBB_CoachPC::PlayerTouchScreen()
@@ -140,14 +120,14 @@ void AKFBB_CoachPC::PlayerTouchScreen()
 		bBeginDrag = BeginDragTouch(MouseTile);
 	}
 
-	ServerTouchScreen(MouseTile ? MouseTile->TileIdx : -1, bBeginDrag);
+	ServerTouchScreen(FTileInfo(MouseTile), bBeginDrag);
 }
 
-void AKFBB_CoachPC::ServerTouchScreen_Implementation(int TileIdx, bool bBeginDrag)
+void AKFBB_CoachPC::ServerTouchScreen_Implementation(FTileInfo TileInfo, bool bBeginDrag)
 {
 	if (!Field) { return; }
 
-	UKFBB_FieldTile* MouseTile = Field->GetTileByIndex(TileIdx);
+	UKFBB_FieldTile* MouseTile = Field->GetTileByInfo(TileInfo);
 	AKFBB_PlayerPawn* PlayerOnTile = MouseTile ? MouseTile->GetPlayer() : nullptr;
 
 	if (bBeginDrag)
@@ -160,29 +140,29 @@ void AKFBB_CoachPC::ServerTouchScreen_Implementation(int TileIdx, bool bBeginDra
 		SetSelectedPlayer(PlayerOnTile);
 	}
 }
-bool AKFBB_CoachPC::ServerTouchScreen_Validate(int TileIdx, bool bBeginDrag) { return true; }
+bool AKFBB_CoachPC::ServerTouchScreen_Validate(FTileInfo TileInfo, bool bBeginDrag) { return true; }
 
 void AKFBB_CoachPC::PlayerUntouchScreen()
 {
 	UKFBB_FieldTile* MouseTile = GetTileUnderMouse();
-	ServerPlayerUntouchScreen(MouseTile ? MouseTile->TileIdx : -1);
+	ServerPlayerUntouchScreen(FTileInfo(MouseTile));
 	EndDragTouch(MouseTile);
 }
 
-void AKFBB_CoachPC::ServerPlayerUntouchScreen_Implementation(int TileIdx)
+void AKFBB_CoachPC::ServerPlayerUntouchScreen_Implementation(FTileInfo TileInfo)
 {
 	if (!Field) { return; }
 
-	UKFBB_FieldTile* MouseTile = Field->GetTileByIndex(TileIdx);
-	bool bDidDragPath = StartDragTile && MouseTile != StartDragTile && SelectedTileList.Num() > 0;
+	UKFBB_FieldTile* MouseTile = Field->GetTileByInfo(TileInfo);
+	bool bDidDragPath = StartDragTile && (MouseTile != StartDragTile) && SelectedTileList.Num() > 0;
 
 	if (!bDidDragPath && SelectedPlayer)
 	{
-		bool bOnSelectedTile = SelectedTile && MouseTile == SelectedTile;
-		bool bOnSelectedPlayer = MouseTile == SelectedPlayer->CurrentTile;
+		bool bOnSelectedTile = SelectedTile.IsValid() && TileInfo == SelectedTile;
+		bool bOnSelectedPlayer = TileInfo == SelectedPlayer->CurrentTile;
 		if (bOnSelectedTile && !bOnSelectedPlayer)
 		{
-			SetDestinationTile(MouseTile);
+			SetDestinationTile(TileInfo);
 			ConfirmCommand();
 			ClearSelectedPlayer();
 		}
@@ -195,17 +175,17 @@ void AKFBB_CoachPC::ServerPlayerUntouchScreen_Implementation(int TileIdx)
 			if (PotentialMoveList.Find(MouseTile) == INDEX_NONE)
 			{
 				ClearTileSelection();
-				if (!SelectedTile && !bOnSelectedPlayer)
+				if (!SelectedTile.IsValid() && !bOnSelectedPlayer)
 				{
-					MarkSelectedTile(MouseTile);
+					MarkSelectedTile(TileInfo);
 				}
 			}
 			else
 			{
-				int SelectedTileIdx = SelectedTileList.Find(MouseTile);
+				int SelectedTileIdx = SelectedTileList.Find(TileInfo);
 				if (SelectedTileIdx == INDEX_NONE)
 				{
-					AddToPath(MouseTile);
+					AddToPath(TileInfo);
 				}
 				else
 				{
@@ -219,7 +199,7 @@ void AKFBB_CoachPC::ServerPlayerUntouchScreen_Implementation(int TileIdx)
 	EndDragTouch(MouseTile);
 }
 
-bool AKFBB_CoachPC::ServerPlayerUntouchScreen_Validate(int TileIdx) { return true; }
+bool AKFBB_CoachPC::ServerPlayerUntouchScreen_Validate(FTileInfo TileInfo) { return true; }
 
 bool AKFBB_CoachPC::BeginDragTouch(UKFBB_FieldTile* Tile)
 {
@@ -252,35 +232,35 @@ void AKFBB_CoachPC::CheckDragPath()
 	if (!bIsDraggingPath) { return; }
 
 	auto MouseTile = GetTileUnderMouse(MouseUnderTileScalar);
-	ServerUpdateDragPath(MouseTile ? MouseTile->TileIdx : -1);
+	if (MouseTile)
+	{
+		ServerUpdateDragPath(FTileInfo(MouseTile));
+	}
 }
 
-void AKFBB_CoachPC::ServerUpdateDragPath_Implementation(int TileIdx)
+void AKFBB_CoachPC::ServerUpdateDragPath_Implementation(FTileInfo TileInfo)
 {
-	if (!Field) { return; }
-	
-	UKFBB_FieldTile* MouseTile = Field->GetTileByIndex(TileIdx);
-	if (MouseTile == StartDragTile) { return; }
-
-	AddToPath(MouseTile);
+	if (TileInfo == StartDragTile) { return; }
+	AddToPath(TileInfo);
 }
-bool AKFBB_CoachPC::ServerUpdateDragPath_Validate(int TileIdx) { return true; }
+bool AKFBB_CoachPC::ServerUpdateDragPath_Validate(FTileInfo TileInfo) { return true; }
 
-void AKFBB_CoachPC::AddToPath(UKFBB_FieldTile* Tile)
+void AKFBB_CoachPC::AddToPath(FTileInfo Tile)
 {
-	if (!Tile || !SelectedPlayer || !SelectedAI) { return; }
+	if (!Tile.IsValid() || !SelectedPlayer || !SelectedAI || !Field) { return; }
 
-	if (!SelectedAI->CanMoveThruTile(Tile)) { return; }
+	if (!SelectedAI->CanMoveThruTile(Field->GetTileByInfo(Tile))) { return; }
 
 	bool bSuccess = false;
 
 	int TileIdx = SelectedTileList.Find(Tile);
 	if (TileIdx == INDEX_NONE)
 	{
-		auto LastDragTile = SelectedTileList.Num() ? SelectedTileList.Last() : SelectedPlayer->CurrentTile;
+		auto LastDragTile = GetLastSelectedTile();
+		if (!LastDragTile) { LastDragTile = SelectedPlayer->GetCurrentTile(); }
 		if (Tile == LastDragTile) { return; }
 
-		bSuccess = SelectedAI->AddToPath(LastDragTile, Tile, SelectedTileList);
+		bSuccess = SelectedAI->AddToPath(LastDragTile, Field->GetTileByInfo(Tile), SelectedTileList);
 	}
 	else
 	{
@@ -323,87 +303,83 @@ void AKFBB_CoachPC::UpdatePotentialMoveList()
 	{
 		int AvailRange = FMath::FloorToInt(SelectedPlayer->AttribSet->Stat_Movement.GetCurrentValue()) - SelectedTileList.Num();
 		if (SelectedTileList.Num() > 0) { AvailRange++; }
-		auto StartTile = SelectedTileList.Num() > 0 ? SelectedTileList.Last() : SelectedPlayer->CurrentTile;
+
+		auto StartTile = GetLastSelectedTile();
+		if (!StartTile) { StartTile = SelectedPlayer->GetCurrentTile(); }
 		PotentialMoveList = Field->GetListOfTilesInRange(StartTile, AvailRange);
 	}
 }
 
-void AKFBB_CoachPC::MarkSelectedTile(UKFBB_FieldTile* Tile)
+UKFBB_FieldTile* AKFBB_CoachPC::GetSelectedTile() const
 {
-	if (!Tile)
-	{
-		ClearSelectedTile();
-		return;
-	}
+	return Field ? Field->GetTileByInfo(SelectedTile) : nullptr;
+}
 
+void AKFBB_CoachPC::MarkSelectedTile(FTileInfo Tile)
+{
 	SetSelectedTile(Tile);
-	if (SelectedAI)
+
+	if (SelectedAI && SelectedTile.IsValid())
 	{
 		bool bSuccess = SelectedAI->MarkDestinationTile(SelectedTile);
 		if (!bSuccess)
 		{
 			SelectedAI->ClearDestination();
-			SelectedTile = nullptr;
+			ClearSelectedTile();
 		}
-		SelectedTileList = SelectedAI->GetDestinationPath();
+		SelectedTileList = SelectedAI->GetDestinationPathInfo();
 	}
-	
-//test	UpdatePotentialMoveList();
 }
 
-void AKFBB_CoachPC::SetSelectedTile(UKFBB_FieldTile* Tile)
+void AKFBB_CoachPC::SetSelectedTile(FTileInfo Tile)
 {
-	if (!Tile) 
-	{ 
-		ClearSelectedTile();
-		return; 
-	}
 	SelectedTile = Tile;
-	RepSelectedTile = Tile->TileIdx;
 }
 
 void AKFBB_CoachPC::ClearSelectedTile()
 {
-	SelectedTile = nullptr;
-	RepSelectedTile = -1;
+	SelectedTile.Clear();
 }
 
-void AKFBB_CoachPC::MarkSelectedTileList(TArray<UKFBB_FieldTile*>& ProvidedPath)
+void AKFBB_CoachPC::MarkSelectedTileList(TArray<FTileInfo>& ProvidedPath)
 {
 	if (!Field) { return; }
-
-	SetSelectedTile(ProvidedPath.Num() > 0 ? ProvidedPath.Last() : nullptr);
-	SetSelectedTileList(ProvidedPath);
+	SelectedTile = ProvidedPath.Num() > 0 ? ProvidedPath.Last() : nullptr;
+	SelectedTileList = ProvidedPath;
 	if (SelectedAI)
 	{
 		bool bSuccess = SelectedAI->MarkDestinationPath(ProvidedPath);
-//test	UpdatePotentialMoveList();
 	}
-}
-
-void AKFBB_CoachPC::SetSelectedTileList(TArray<UKFBB_FieldTile*>& TileList)
-{
-	if (!Field) return;
-	SelectedTileList = TileList;
-	Field->ConvertArrayTileToIndex(TileList, RepSelectedTileList);
 }
 
 void AKFBB_CoachPC::ClearSelectedTileList()
 {
 	SelectedTileList.Empty();
-	RepSelectedTileList.Empty();
 }
 
-void AKFBB_CoachPC::SetDestinationTile(UKFBB_FieldTile* t)
+UKFBB_FieldTile* AKFBB_CoachPC::GetFirstSelectedTile() const
 {
-	DestinationTile = t;
-	RepDestinationTile = DestinationTile ? DestinationTile->TileIdx : -1;
+	return (Field && SelectedTileList.Num() > 0) ? Field->GetTileByInfo(SelectedTileList[0]) : nullptr;
+}
+
+UKFBB_FieldTile* AKFBB_CoachPC::GetLastSelectedTile() const
+{
+	return (Field && SelectedTileList.Num() > 0) ? Field->GetTileByInfo(SelectedTileList.Last()) : nullptr;
+}
+
+UKFBB_FieldTile* AKFBB_CoachPC::GetDestinationTile() const
+{
+	return Field ? Field->GetTileByInfo(DestinationTile) : nullptr;
+}
+
+void AKFBB_CoachPC::SetDestinationTile(FTileInfo Tile)
+{
+	DestinationTile = Tile;
 }
 
 void AKFBB_CoachPC::ClearDestinationTile()
 {
-	DestinationTile = nullptr;
-	RepDestinationTile = -1;
+	DestinationTile.Clear();
 }
 
 void AKFBB_CoachPC::BP_ClearTileSelection(bool bClearAI)
@@ -427,12 +403,11 @@ void AKFBB_CoachPC::ClearTileSelection(bool bClearAI)
 	{
 		SelectedAI->ClearDestination();
 	}
-//test	UpdatePotentialMoveList();
 }
 
 void AKFBB_CoachPC::ConfirmCommand()
 {
-	if (!DestinationTile || !SelectedPlayer) { return; }
+	if (!DestinationTile.IsValid() || !SelectedPlayer) { return; }
 	if (!SelectedAI) { return; }
 
 	if (SelectedPlayer->CanAcceptCommand())
@@ -532,10 +507,10 @@ void AKFBB_CoachPC::DrawPotentialMoveList()
 
 void AKFBB_CoachPC::DrawSelectedPlayer()
 {
-	if (SelectedPlayer != nullptr && SelectedPlayer->CurrentTile != nullptr)
+	if (SelectedPlayer != nullptr && SelectedPlayer->CurrentTile.IsValid())
 	{
 		FVector DrawLocation = SelectedPlayer->GetActorLocation() + FVector(0, 0, -48);
-		float Radius = SelectedPlayer->CurrentTile->GetTileSize() * 0.5f;
+		float Radius = SelectedPlayer->GetCurrentTile()->GetTileSize() * 0.5f;
 		DrawDebugCylinder(GetWorld(), DrawLocation, DrawLocation, Radius, 32, FColor::White, false, -1, 0, 3.f);
 	}
 }
@@ -583,10 +558,13 @@ void AKFBB_CoachPC::SetTeamID(uint8 teamID)
 
 void AKFBB_CoachPC::DrawDebug(float DeltaTime)
 {
-	if (SelectedTile != nullptr)
+	if (!Field) { return; }
+
+	auto SelTile = GetSelectedTile();
+	if (SelTile != nullptr)
 	{
 		float thickness = 0.f;
-		if (SelectedTile == DisplayTileUnderMouse && bIsDragging)
+		if (SelTile == DisplayTileUnderMouse && bIsDragging)
 		{
 			DebugFlashSelectedTileTimer -= DeltaTime;
 			if (DebugFlashSelectedTileTimer <= 0)
@@ -602,16 +580,18 @@ void AKFBB_CoachPC::DrawDebug(float DeltaTime)
 			bDebugHighlightSelectedTile = true;
 		}
 
-		SelectedTile->DrawDebugTileOverride(FVector(0, 0, 2), 0.45f, FColor::White, thickness);
+		SelTile->DrawDebugTileOverride(FVector(0, 0, 2), 0.45f, FColor::White, thickness);
 		
 	}
 	for (int i = 0; i < SelectedTileList.Num(); i++)
 	{
-		SelectedTileList[i]->DrawDebugTileOverride(FVector(0, 0, 2), 0.45f, i == SelectedTileList.Num() - 1 ? FColor::White : FColor::Emerald);
+		auto Tile = Field->GetTileByInfo(SelectedTileList[i]);
+		if (!Tile) { continue; }
+		Tile->DrawDebugTileOverride(FVector(0, 0, 2), 0.45f, i == SelectedTileList.Num() - 1 ? FColor::White : FColor::Emerald);
 	}
-	if (DestinationTile != nullptr)
+	if (DestinationTile.IsValid())
 	{
-		DestinationTile->DrawDebugTileOverride(FVector(0, 0, 2), 0.45f, FColor::Purple);
+		Field->GetTileByInfo(DestinationTile)->DrawDebugTileOverride(FVector(0, 0, 2), 0.45f, FColor::Purple);
 	}
 
 	if (DisplayTileUnderMouse != nullptr)

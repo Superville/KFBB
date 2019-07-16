@@ -4,30 +4,14 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
+#include "KFBBUtility.h"
 #include "KFBB_Field.generated.h"
 
 class USceneComponent;
-class UKFBB_FieldTile;
 class UMaterialInstance;
 class UMaterial;
-
-USTRUCT()
-struct FTileDir
-{
-	GENERATED_BODY()
-
-	short x;
-	short y;
-
-	FTileDir() : x(0), y(0) {}
-	FTileDir(short _x, short _y) : x(_x), y(_y) {}
-
-	FORCEINLINE bool operator==(const FTileDir& V) const { return x == V.x && y == V.y; }
-	FORCEINLINE bool operator!=(const FTileDir& V) const { return x != V.x || y != V.y; }
-
-	static FTileDir ConvertToTileDir(FVector2D v);
-	bool IsCardinalDir() { return !((FMath::Abs(x) != 0 && FMath::Abs(y) != 0) || (x == 0 && y == 0)); }
-};
+class AKFBB_Field;
+class UKFBB_FieldTile;
 
 UCLASS()
 class KFBB_API AKFBB_Field : public AActor
@@ -109,8 +93,13 @@ public:
 	UFUNCTION(BlueprintPure)
 	UKFBB_FieldTile* GetTileByXY(int x, int y) const;
 	UKFBB_FieldTile* GetTileByIndex(int idx) const;
+	UKFBB_FieldTile* GetTileByInfo(const FTileInfo& RepInfo) const;
+	void ConvertArrayRepInfoToTile(TArray<FTileInfo> RepArray, TArray<UKFBB_FieldTile*>& TileArray);
+	void ConvertArrayTileToRepInfo(TArray<UKFBB_FieldTile*> TileArray, TArray<FTileInfo>& RepArray);
 	void ConvertArrayIndexToTile(TArray<int32> IndexArray, TArray<UKFBB_FieldTile*>& TileArray);
-	void ConvertArrayTileToIndex(TArray<UKFBB_FieldTile*> TileArray, TArray<int32>& IndexArray);
+	void ConvertArrayTileToIndex(TArray<UKFBB_FieldTile*> TileArray, TArray<int32>& IndexArray);	
+	UKFBB_FieldTile* ConvertRepInfoToTile(FTileInfo RepInfo);
+	static int32 FindRepInfoArrayIndex(TArray<FTileInfo>& RepArray, int32 IndexToFind);
 
 	UFUNCTION(BlueprintPure)
 	int GetFieldWidth() const { return Width; }

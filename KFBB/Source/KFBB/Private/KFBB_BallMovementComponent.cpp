@@ -9,11 +9,3 @@ void UKFBB_BallMovementComponent::StopSimulating(const FHitResult& HitResult)
 
 	Super::StopSimulating(HitResult);
 }
-
-void UKFBB_BallMovementComponent::Test()
-{
-	auto uc = UpdatedComponent;
-	auto act = bIsActive;
-
-	int i = 0;
-}

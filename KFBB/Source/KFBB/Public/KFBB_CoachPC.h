@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/PlayerController.h"
+#include "KFBB_Field.h"
 #include "KFBB_CoachPC.generated.h"
 
 class AKFBB_PlayerPawn;
@@ -37,32 +38,25 @@ class KFBB_API AKFBB_CoachPC : public APlayerController
 	virtual void SetSelectedPlayer(AKFBB_PlayerPawn* p);
 	virtual void ClearSelectedPlayer();
 
-	UKFBB_FieldTile* SelectedTile;
-	virtual void MarkSelectedTile(UKFBB_FieldTile* Tile);
-	virtual void SetSelectedTile(UKFBB_FieldTile* Tile);
+	UPROPERTY(Replicated)
+	FTileInfo SelectedTile;
+	virtual UKFBB_FieldTile* GetSelectedTile() const;
+	virtual void MarkSelectedTile(FTileInfo Tile);
+	virtual void SetSelectedTile(FTileInfo Tile);
 	virtual void ClearSelectedTile();
-	UPROPERTY(ReplicatedUsing = OnRep_SelectedTile)
-	int32 RepSelectedTile;
-	UFUNCTION()
-	void OnRep_SelectedTile();
 
-	TArray<UKFBB_FieldTile*> SelectedTileList;
-	virtual void MarkSelectedTileList(TArray<UKFBB_FieldTile*>& ProvidedPath);
-	virtual void SetSelectedTileList(TArray<UKFBB_FieldTile*>& TileList);
+	UPROPERTY(Replicated)
+	TArray<FTileInfo> SelectedTileList;
+	virtual void MarkSelectedTileList(TArray<FTileInfo>& ProvidedPath);
 	virtual void ClearSelectedTileList();
-	UPROPERTY(ReplicatedUsing = OnRep_SelectedTileList)
-	TArray<int32> RepSelectedTileList;
-	UFUNCTION()
-	void OnRep_SelectedTileList();
-	
-	UKFBB_FieldTile* DestinationTile;
-	virtual void SetDestinationTile(UKFBB_FieldTile* t);
-	virtual void ClearDestinationTile();
-	UPROPERTY(ReplicatedUsing = OnRep_DestinationTile)
-	int32 RepDestinationTile;
-	UFUNCTION()
-	void OnRep_DestinationTile();
+	UKFBB_FieldTile* GetFirstSelectedTile() const;
+	UKFBB_FieldTile* GetLastSelectedTile() const;
 
+	UPROPERTY(Replicated)
+	FTileInfo DestinationTile;
+	virtual UKFBB_FieldTile* GetDestinationTile() const;
+	virtual void SetDestinationTile(FTileInfo Tile);
+	virtual void ClearDestinationTile();
 
 	virtual void ConfirmCommand();
 
@@ -74,11 +68,11 @@ public:
 	UFUNCTION(BlueprintCallable)
 	virtual void PlayerTouchScreen();
 	UFUNCTION(Server, Reliable, WithValidation, Category = "KFBB | Input")
-	void ServerTouchScreen(int TileIdx, bool bBeginDrag);
+	void ServerTouchScreen(FTileInfo TileInfo, bool bBeginDrag);
 	UFUNCTION(BlueprintCallable)
 	virtual void PlayerUntouchScreen();
 	UFUNCTION(Server, Reliable, WithValidation, Category = "KFBB | Input")
-	void ServerPlayerUntouchScreen(int TileIdx);
+	void ServerPlayerUntouchScreen(FTileInfo TileInfo);
 	
 	virtual void SetDragInfo(UKFBB_FieldTile* Tile);
 	virtual void ClearDragInfo();
@@ -86,9 +80,10 @@ public:
 	virtual void EndDragTouch(UKFBB_FieldTile* Tile);
 	virtual void CheckDragPath();
 	UFUNCTION(Server, Reliable, WithValidation, Category = "KFBB | Input")
-	void ServerUpdateDragPath(int TileIdx);
+	void ServerUpdateDragPath(FTileInfo TileInfo);
 
-	virtual void AddToPath(UKFBB_FieldTile* Tile);
+	virtual void AddToPath(FTileInfo Tile);
+
 	UKFBB_FieldTile* StartDragTile = nullptr;
 	bool bIsDraggingPath = false;
 	bool bIsDragging = false;

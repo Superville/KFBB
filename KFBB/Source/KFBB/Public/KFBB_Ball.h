@@ -5,9 +5,11 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 #include "GameplayTags.h"
+#include "KFBBUtility.h"
 #include "AbilitySystemInterface.h"
 #include "KFBB_Ball.generated.h"
 
+class AKFBB_Field;
 
 UCLASS()
 class KFBB_API AKFBB_Ball : public AActor, public IAbilitySystemInterface
@@ -36,10 +38,16 @@ public:
 	UStaticMeshComponent* BallSMC = nullptr;
 
 
-	UPROPERTY(BlueprintReadOnly)
-	class AKFBB_Field *Field;
-	UPROPERTY(BlueprintReadOnly)
-	class UKFBB_FieldTile* CurrentTile;
+	UPROPERTY()
+	AKFBB_Field* Field;
+	UPROPERTY()
+	FTileInfo CurrentTile;
+
+	UFUNCTION(BlueprintPure, Category = "KFBB")
+	FORCEINLINE AKFBB_Field* GetField() const;
+	UFUNCTION(BlueprintPure, Category = "KFBB")
+	FORCEINLINE UKFBB_FieldTile* GetCurrentTile() const;
+
 
 	UPROPERTY(BlueprintReadOnly)
 	class AKFBB_PlayerPawn* OwningPlayer;
@@ -69,7 +77,4 @@ public:
 	FGameplayTag CanBePickedUpTag;
 
 	void DrawDebugCurrentTile() const;
-
-	//test
-	void Test();
 };

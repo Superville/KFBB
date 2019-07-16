@@ -12,30 +12,6 @@
 #include "EngineUtils.h"
 
 
-FTileDir FTileDir::ConvertToTileDir(FVector2D v)
-{
-	v = v.GetSafeNormal();
-	if (FMath::Abs(v.X) > 0.7f)
-	{
-		v.X = (v.X < 0) ? -1 : 1;
-	}
-	else
-	{
-		v.X = 0;
-	}
-
-	if (FMath::Abs(v.Y) > 0.7f)
-	{
-		v.Y = (v.Y < 0) ? -1 : 1;
-	}
-	else
-	{
-		v.Y = 0;
-	}
-
-	return FTileDir(v.X, v.Y);
-}
-
 // Sets default values
 AKFBB_Field::AKFBB_Field()
 {
@@ -190,19 +166,19 @@ void AKFBB_Field::Tick(float DeltaTime)
 
 int AKFBB_Field::GetIndexByXY(int x, int y) const
 {
-	if (x < 0 || x >= Width || y < 0 || y >= Length) { return -1; }
+	if (x < 0 || x >= Width || y < 0 || y >= Length) { return INDEX_NONE; }
 	return (y * Width) + x;
 }
 
 int AKFBB_Field::GetXByIndex(int idx) const
 {
-	if (idx < 0 || idx >= (Width * Length)) { return -1; }
+	if (idx < 0 || idx >= (Width * Length)) { return INDEX_NONE; }
 	return idx % Width;
 }
 
 int AKFBB_Field::GetYByIndex(int idx) const
 {
-	if (idx < 0 || idx >= (Width * Length)) { return -1; }
+	if (idx < 0 || idx >= (Width * Length)) { return INDEX_NONE; }
 	return idx / Width;
 }
 
@@ -215,6 +191,31 @@ UKFBB_FieldTile* AKFBB_Field::GetTileByXY(int x, int y) const
 UKFBB_FieldTile* AKFBB_Field::GetTileByIndex(int idx) const
 {
 	return GetTileByXY(GetXByIndex(idx), GetYByIndex(idx));
+}
+
+UKFBB_FieldTile* AKFBB_Field::GetTileByInfo(const FTileInfo& RepInfo) const
+{
+	return GetTileByIndex(RepInfo.TileIdx);
+}
+
+void AKFBB_Field::ConvertArrayRepInfoToTile(TArray<FTileInfo> RepArray, TArray<UKFBB_FieldTile*>& TileArray)
+{
+	TileArray.Empty(RepArray.Num());
+	for (int i = 0; i < RepArray.Num(); i++)
+	{
+		if(!RepArray[i].IsValid()) { continue; }
+		TileArray.Add(GetTileByIndex(RepArray[i].TileIdx));
+	}
+}
+
+void AKFBB_Field::ConvertArrayTileToRepInfo(TArray<UKFBB_FieldTile*> TileArray, TArray<FTileInfo>& RepArray)
+{
+	RepArray.Empty(TileArray.Num());
+	for (int i = 0; i < TileArray.Num(); i++)
+	{
+		if (!TileArray[i]) { continue; }
+		RepArray.Add(FTileInfo(TileArray[i]->TileIdx));
+	}
 }
 
 void AKFBB_Field::ConvertArrayIndexToTile(TArray<int32> IndexArray, TArray<UKFBB_FieldTile*>& TileArray)
@@ -232,8 +233,22 @@ void AKFBB_Field::ConvertArrayTileToIndex(TArray<UKFBB_FieldTile*> TileArray, TA
 	for (int i = 0; i < TileArray.Num(); i++)
 	{
 		UKFBB_FieldTile* Tile = TileArray[i];
-		IndexArray.Add(Tile ? TileArray[i]->TileIdx : -1);
+		IndexArray.Add(Tile ? TileArray[i]->TileIdx : INDEX_NONE);
 	}
+}
+
+UKFBB_FieldTile* AKFBB_Field::ConvertRepInfoToTile(FTileInfo RepInfo)
+{
+	return RepInfo.IsValid() ? GetTileByIndex(RepInfo.TileIdx) : nullptr;
+}
+
+int32 AKFBB_Field::FindRepInfoArrayIndex(TArray<FTileInfo>& RepArray, int32 IndexToFind)
+{
+	for(int i = 0; i < RepArray.Num(); i++)
+	{
+		if (RepArray[i].TileIdx == IndexToFind) { return i; }
+	}
+	return INDEX_NONE;
 }
 
 FVector AKFBB_Field::GetFieldTileLocation(int x, int y) const

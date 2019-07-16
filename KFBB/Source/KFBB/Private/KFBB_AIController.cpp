@@ -35,17 +35,25 @@ AKFBB_Field* AKFBB_AIController::GetField() const
 
 UKFBB_FieldTile* AKFBB_AIController::GetDestinationTile()
 {
-	return MyPlayerPawn ? MyPlayerPawn->DestinationTile : nullptr;
+	//todo - cache Field
+	auto Field = GetField();
+	return (MyPlayerPawn && Field)? Field->ConvertRepInfoToTile(MyPlayerPawn->DestinationTile) : nullptr;
 }
 
 TArray<UKFBB_FieldTile*> AKFBB_AIController::GetDestinationPath()
 {
-	if (MyPlayerPawn)
+	TArray<UKFBB_FieldTile*> TileArray;
+	auto Field = GetField();
+	if (MyPlayerPawn && Field)
 	{
-		return MyPlayerPawn->PathToDestTile;
+		Field->ConvertArrayRepInfoToTile(MyPlayerPawn->PathToDestTile, TileArray);
 	}
-	TArray<UKFBB_FieldTile*> EmptyArray;
-	return EmptyArray;
+	return TileArray;
+}
+
+TArray<FTileInfo> AKFBB_AIController::GetDestinationPathInfo() const
+{
+	return MyPlayerPawn->PathToDestTile;
 }
 
 void AKFBB_AIController::ClearPathing(TArray<UKFBB_FieldTile*>& out_PathList)
@@ -94,40 +102,50 @@ bool AKFBB_AIController::CanMoveThruTile(UKFBB_FieldTile* tile) const
 	return bSuccess;
 }
 
-bool AKFBB_AIController::MarkDestinationTile(UKFBB_FieldTile* DestTile)
+bool AKFBB_AIController::MarkDestinationTile(FTileInfo& DestTile)
 {
 	ClearDestination();
 
+	auto Field = GetField();
 	auto P = Cast<AKFBB_PlayerPawn>(GetPawn());
-	if (!P || !DestTile) { return false; }
+	if (!P || !Field || !DestTile.IsValid()) { return false; }
 
 	P->SetDestinationTile(DestTile);
 	
-	if (P->DestinationTile == P->CurrentTile) { return true; }
+	if (DestTile == P->CurrentTile) { return true; }
 
-	int MaxPathLength = P->AttribSet ? P->AttribSet->Stat_Movement.GetCurrentValue() + 1 : 0;
-	bool bSuccess = GeneratePathToTile(P->CurrentTile, P->DestinationTile, P->PathToDestTile);
-	bSuccess = bSuccess && GetDestinationPath().Num() <= MaxPathLength;
+	TArray<UKFBB_FieldTile*> TilePath;
+	bool bSuccess = GeneratePathToTile(P->GetCurrentTile(), Field->GetTileByInfo(DestTile), TilePath);
+
+	TArray<FTileInfo> RepArray;
+	Field->ConvertArrayTileToRepInfo(TilePath, RepArray);
+	P->SetPathToDestTile(RepArray);
+
+	int MaxPathLength = P->GetStat_Movement() + 1;
+	bSuccess = bSuccess && RepArray.Num() <= MaxPathLength;
 
 	return bSuccess;
 }
 
-bool AKFBB_AIController::MarkDestinationPath(TArray<UKFBB_FieldTile*>& ProvidedPath)
+bool AKFBB_AIController::MarkDestinationPath(TArray<FTileInfo>& ProvidedPath)
 {
 	ClearDestination();
 
+	auto Field = GetField();
 	auto P = Cast<AKFBB_PlayerPawn>(GetPawn());
-	if (!P || ProvidedPath.Num() <= 0)	{ return false; }
+	if (!P || !Field || ProvidedPath.Num() <= 0)	{ return false; }
+	
+	auto DestTile = ProvidedPath.Last();
+	P->SetDestinationTile(DestTile);
 
-	P->SetDestinationTile(ProvidedPath.Last());
-	bool bSuccess = (P->DestinationTile == P->CurrentTile);
+	bool bSuccess = (DestTile == P->CurrentTile);
 	if (!bSuccess)
 	{
-		int MaxPathLength = P->AttribSet ? P->AttribSet->Stat_Movement.GetCurrentValue() + 1 : 0;
-		P->SetPathToDestTile(ProvidedPath);
-		bSuccess = bSuccess && GetDestinationPath().Num() <= MaxPathLength;
-
 		//todo verify path provided are adjacent files
+		P->SetPathToDestTile(ProvidedPath);
+
+		int MaxPathLength = P->GetStat_Movement() + 1;
+		bSuccess = bSuccess && ProvidedPath.Num() <= MaxPathLength;
 	}
 
 	return bSuccess;
@@ -160,10 +178,11 @@ void AKFBB_AIController::ClearDestination()
 	}
 }
 
-bool AKFBB_AIController::AddToPath(UKFBB_FieldTile* StartTile, UKFBB_FieldTile* DestTile, TArray<UKFBB_FieldTile*>& out_PathList)
+bool AKFBB_AIController::AddToPath(UKFBB_FieldTile* StartTile, UKFBB_FieldTile* DestTile, TArray<FTileInfo>& out_PathList)
 {
+	auto Field = GetField();
 	auto P = Cast<AKFBB_PlayerPawn>(GetPawn());
-	if (!P || !StartTile || !DestTile) { return false; }
+	if (!P || !StartTile || !DestTile || !Field) { return false; }
 
 	if (StartTile == DestTile) { return true; }
 
@@ -192,7 +211,9 @@ bool AKFBB_AIController::AddToPath(UKFBB_FieldTile* StartTile, UKFBB_FieldTile* 
 				PathToAdd.RemoveAt(0);
 			}
 
-			out_PathList.Append(PathToAdd);
+			TArray<FTileInfo> RepPathToAdd;
+			Field->ConvertArrayTileToRepInfo(PathToAdd, RepPathToAdd);
+			out_PathList.Append(RepPathToAdd);
 			if (out_PathList.Num() > MaxPathLength)
 			{
 				out_PathList.SetNum(MaxPathLength);
@@ -206,15 +227,10 @@ bool AKFBB_AIController::AddToPath(UKFBB_FieldTile* StartTile, UKFBB_FieldTile* 
 bool AKFBB_AIController::GeneratePathToTile(UKFBB_FieldTile* StartTile, UKFBB_FieldTile* DestTile, TArray<UKFBB_FieldTile*>& out_PathList, int MaxPathLength)
 {
 	AKFBB_Field* Field = GetField();
-	if (Field == nullptr)
-		return false;
+	if (Field == nullptr) { return false; }
 
 	UKFBB_FieldTile* CurrentTile = StartTile;
-	if (CurrentTile == nullptr)
-		return false;
-
-	if (DestTile == nullptr)
-		return false;
+	if (!CurrentTile || !DestTile) { return false; }
 
 	ClearPathing(out_PathList);
 

@@ -17,6 +17,4 @@ class KFBB_API UKFBB_BallMovementComponent : public UProjectileMovementComponent
 	
 public:
 	virtual void StopSimulating(const FHitResult& HitResult);
-	
-	virtual void Test();
 };

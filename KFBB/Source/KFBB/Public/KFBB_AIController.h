@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "AIController.h"
+#include "KFBBUtility.h"
 #include "KFBB_AIController.generated.h"
 
 class AKFBB_PlayerPawn;
@@ -34,17 +35,18 @@ public:
 
 	UFUNCTION(BlueprintPure, Category = "KFBB | AI")
 	virtual UKFBB_FieldTile* GetDestinationTile();
-	virtual bool MarkDestinationTile(UKFBB_FieldTile* DestTile);
+	virtual bool MarkDestinationTile(FTileInfo& DestTile);
 
 	UFUNCTION(BlueprintPure, Category = "KFBB | AI")
 	virtual TArray<UKFBB_FieldTile*> GetDestinationPath();
-	virtual bool MarkDestinationPath(TArray<UKFBB_FieldTile*>& ProvidedPath);
+	virtual TArray<FTileInfo> GetDestinationPathInfo() const;
+	virtual bool MarkDestinationPath(TArray<FTileInfo>& ProvidedPath);
 
 	virtual void ClearDestination();
 	virtual bool ConfirmMoveToDestinationTile();
 	
 	void ClearPathing(TArray<UKFBB_FieldTile*>& out_PathList);
-	bool AddToPath(UKFBB_FieldTile* StartTile, UKFBB_FieldTile* DestTile, TArray<UKFBB_FieldTile*>& out_PathList);
+	bool AddToPath(UKFBB_FieldTile* StartTile, UKFBB_FieldTile* DestTile, TArray<FTileInfo>& out_PathList);
 	bool GeneratePathToTile(UKFBB_FieldTile* StartTile, UKFBB_FieldTile* DestTile, TArray<UKFBB_FieldTile*>& out_PathList, int MaxPathLength = 0);
 	float GetPathGlobalCost(UKFBB_FieldTile* curr, UKFBB_FieldTile* next) const;
 	float GetPathHeuristicCost(UKFBB_FieldTile* dest, UKFBB_FieldTile* next) const;

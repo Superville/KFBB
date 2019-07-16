@@ -368,8 +368,8 @@ void AKFBBGameModeBase::ResolveCollision(AKFBB_PlayerPawn* PawnA, AKFBB_PlayerPa
 	// PawnA = player already occupying tile
 	// PawnB = player moving onto the tile, PawnB->PreviousTile will give direction of movement
 
-	auto KnockDirA = Field->GetTileDir(PawnB->PreviousTile, PawnB->CurrentTile);
-	auto KnockDirB = Field->GetTileDir(PawnB->CurrentTile, PawnB->PreviousTile);
+	auto KnockDirA = Field->GetTileDir(PawnB->GetPreviousTile(), PawnB->GetCurrentTile());
+	auto KnockDirB = Field->GetTileDir(PawnB->GetCurrentTile(), PawnB->GetPreviousTile());
 	
 // 	KnockDirA.x = 0;
 // 	KnockDirB.y = 0;

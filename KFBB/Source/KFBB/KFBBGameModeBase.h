@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/GameMode.h"
+#include "KFBBUtility.h"
 #include "KFBBGameModeBase.generated.h"
 
 class UUserWidget; 

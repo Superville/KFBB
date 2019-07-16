@@ -76,9 +76,6 @@ void AKFBB_Ball::Tick(float DeltaTime)
 	
 	//debug
 	DrawDebugCurrentTile();
-
-	//test
-	Test();
 }
 
 void AKFBB_Ball::RegisterWithField()
@@ -86,7 +83,7 @@ void AKFBB_Ball::RegisterWithField()
 	bOnGround = false;
 	if (OwningPlayer != nullptr)
 	{
-		RegisterWithTile(OwningPlayer->CurrentTile);
+		RegisterWithTile(OwningPlayer->GetCurrentTile());
 	}
 	else
 	{
@@ -116,10 +113,20 @@ void AKFBB_Ball::RegisterWithTile(class UKFBB_FieldTile* Tile)
 {
 	if (CurrentTile != Tile)
 	{
-		if (CurrentTile != nullptr) { CurrentTile->UnRegisterActor(this); }
+		if (CurrentTile.IsValid()) { GetCurrentTile()->UnRegisterActor(this); }
 		CurrentTile = Tile;
-		if (CurrentTile != nullptr) { CurrentTile->RegisterActor(this); }
+		if (CurrentTile.IsValid()) { GetCurrentTile()->RegisterActor(this); }
 	}
+}
+
+FORCEINLINE AKFBB_Field* AKFBB_Ball::GetField() const
+{
+	return Field;
+}
+
+FORCEINLINE UKFBB_FieldTile* AKFBB_Ball::GetCurrentTile() const
+{
+	return Field ? Field->GetTileByInfo(CurrentTile) : nullptr;
 }
 
 void AKFBB_Ball::RegisterWithPlayer(AKFBB_PlayerPawn* P)
@@ -150,10 +157,9 @@ void AKFBB_Ball::FumbleBall(UKFBB_FieldTile* DestTile)
 	const FDetachmentTransformRules dtr(EDetachmentRule::KeepWorld, false);
 	DetachFromActor(dtr);
 	
-
-	if (BallSMC != nullptr)
+	if (BallSMC != nullptr && CurrentTile.IsValid())
 	{
-		FVector ballVel = (DestTile->TileLocation - CurrentTile->TileLocation).GetSafeNormal2D() * 100;
+		FVector ballVel = (DestTile->TileLocation - GetCurrentTile()->TileLocation).GetSafeNormal2D() * 100;
 		ballVel.Z += 250;
 
 		FVector ballAngVel = FMath::VRand() * (FMath::FRandRange(-10.f, 10.f));
@@ -224,10 +230,10 @@ void AKFBB_Ball::StopMovement()
 
 void AKFBB_Ball::AdjustBallToTileCenter(float DeltaTime)
 {
-	if (CurrentTile != nullptr)
+	if (CurrentTile.IsValid())
 	{
 		FVector BallLocation = GetActorLocation();
-		FVector BallToTileCenter = (CurrentTile->TileLocation - BallLocation);
+		FVector BallToTileCenter = (GetCurrentTile()->TileLocation - BallLocation);
 		float DistToTileCenter = BallToTileCenter.Size2D();
 		if (DistToTileCenter > 5.f)
 		{
@@ -244,14 +250,7 @@ UAbilitySystemComponent* AKFBB_Ball::GetAbilitySystemComponent() const
 
 void AKFBB_Ball::DrawDebugCurrentTile() const
 {
-	if (Field == nullptr || CurrentTile == nullptr)
-		return;
+	if (Field == nullptr || !CurrentTile.IsValid()) { return; }
 
-	CurrentTile->DrawDebugTile(FVector(0, 0, 2));
-}
-
-void AKFBB_Ball::Test()
-{
-	auto bmc = Cast<UKFBB_BallMovementComponent>(GetComponentByClass(UKFBB_BallMovementComponent::StaticClass()));
-	bmc->Test();
+	GetCurrentTile()->DrawDebugTile(FVector(0, 0, 2));
 }

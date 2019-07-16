@@ -7,6 +7,7 @@
 #include "AbilitySystemInterface.h"
 #include "GameplayTags.h"
 #include "GameFramework/Character.h"
+#include "KFBBUtility.h"
 #include "KFBB_PlayerPawn.generated.h"
 
 class UPrimitiveComponent;
@@ -99,28 +100,23 @@ class KFBB_API AKFBB_PlayerPawn : public ACharacter, public IAbilitySystemInterf
 	void OnCooldownTimerExpired();
 	FColor GetCooldownColor() const;
 
-	UPROPERTY(BlueprintReadWrite, Category = "KFBB | AI", meta = (AllowPrivateAccess = "true"))
-	UKFBB_FieldTile* DestinationTile;
+	UPROPERTY(Replicated)
+	FTileInfo DestinationTile;
+	UFUNCTION(BlueprintPure, Category = "KFBB | AI", meta = (AllowPrivateAccess = "true"))
+	virtual UKFBB_FieldTile* GetDestinationTile() const;
 	UFUNCTION(BlueprintCallable, Category = "KFBB | AI", meta = (AllowPrivateAccess = "true"))
-	virtual void SetDestinationTile(UKFBB_FieldTile* Tile);
+	virtual void SetDestinationTile(FTileInfo Tile);
 	UFUNCTION(BlueprintCallable, Category = "KFBB | AI", meta = (AllowPrivateAccess = "true"))
 	virtual void ClearDestinationTile();
-	UPROPERTY(ReplicatedUsing = OnRep_DestinationTile)
-	int32 RepDestinationTile;
-	UFUNCTION()
-	void OnRep_DestinationTile();
 
-	UPROPERTY(BlueprintReadWrite, Category = "KFBB | AI", meta = (AllowPrivateAccess = "true"))
-	TArray<UKFBB_FieldTile*> PathToDestTile;
+	UPROPERTY(Replicated)
+	TArray<FTileInfo> PathToDestTile;
+	UFUNCTION(BlueprintPure, Category = "KFBB | AI", meta = (AllowPrivateAccess = "true"))
+	virtual bool HasPathToDestTile();
 	UFUNCTION(BlueprintCallable, Category = "KFBB | AI", meta = (AllowPrivateAccess = "true"))
-	virtual void SetPathToDestTile(TArray<UKFBB_FieldTile*> PathToDest);
+	virtual void SetPathToDestTile(TArray<FTileInfo>& PathToDest);
 	UFUNCTION(BlueprintCallable, Category = "KFBB | AI", meta = (AllowPrivateAccess = "true"))
 	virtual void ClearPathToDestTile();
-	UPROPERTY(ReplicatedUsing = OnRep_PathToDestTile)
-	TArray<int32> RepPathToDestTile;
-	UFUNCTION()
-	void OnRep_PathToDestTile();
-
 
 	void DrawDebugCurrentTile() const;
 	void DrawDebugStatus() const;
@@ -156,14 +152,27 @@ public:
 	bool IsMyCoach(AKFBB_CoachPC* inCoach) const;
 	bool IsSameTeam(AKFBB_PlayerPawn* Other) const;
 
-	UPROPERTY(BlueprintReadOnly)
+	UPROPERTY()
+	FTileInfo CurrentTile;
+	UPROPERTY()
+	FTileInfo PreviousTile;
+	UPROPERTY()
+	FTileInfo NextTile;
+	UPROPERTY()
 	AKFBB_Field *Field;
-	UPROPERTY(BlueprintReadOnly)
-	UKFBB_FieldTile* CurrentTile;
-	UPROPERTY(BlueprintReadOnly)
-	UKFBB_FieldTile* PreviousTile;
+
+	UFUNCTION(BlueprintPure, Category = "KFBB")
+	FORCEINLINE AKFBB_Field* GetField() const;
+	UFUNCTION(BlueprintPure, Category = "KFBB")
+	FORCEINLINE UKFBB_FieldTile* GetCurrentTile() const;
+	UFUNCTION(BlueprintPure, Category = "KFBB")
+	FORCEINLINE UKFBB_FieldTile* GetPreviousTile() const;
+	UFUNCTION(BlueprintPure, Category = "KFBB")
+	FORCEINLINE UKFBB_FieldTile* GetNextTile() const;
 
 
+
+	//todo replace with GE cooldown
 	UPROPERTY(BlueprintReadOnly)
 	float CooldownTimer;
 	UPROPERTY(BlueprintReadOnly)
@@ -180,9 +189,10 @@ public:
 	virtual void NotifyReachedGrid();
 	UFUNCTION(BlueprintCallable, Category = "KFBB | Grid Pathing")
 	virtual void NotifyReachedDestinationGrid();
+	UFUNCTION(BlueprintPure, Category = "KFBB | Grid Pathing")
+	UKFBB_FieldTile* GetFirstGrid() const;
 	UFUNCTION(BlueprintCallable, Category = "KFBB | Grid Pathing")
 	void RemoveFirstGrid();
-
 
 	virtual void NotifyHit(UPrimitiveComponent* MyComp, AActor* Other, UPrimitiveComponent* OtherComp, bool bSelfMoved, FVector HitLocation, FVector HitNormal, FVector NormalImpulse, const FHitResult& Hit) override;
 	virtual void KnockDown(FTileDir dir);
@@ -222,9 +232,6 @@ public:
 
 	UPROPERTY(BlueprintReadOnly)
 	TEnumAsByte<EKFBB_PlayerState::Type> Status;
-	//test
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	int TestStatus;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	UDataTable* PlayerDataTable;
@@ -242,6 +249,9 @@ public:
 	UAbilitySystemComponent* GetAbilitySystemComponent() const override;
 	UFUNCTION(BlueprintCallable, Category = "KFBB")
 	void GrantAbility(TSubclassOf<UGameplayAbility> Ability);
+
+	UFUNCTION(BlueprintCallable, Category = "KFBB | Stats")
+	virtual int32 GetStat_Movement();
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Tags")
 	FGameplayTag ProhibitCommandsTag;
