@@ -25,8 +25,6 @@ public:
 	virtual void BeginPlay() override;
 	virtual void Tick(float DeltaTime) override;
 
-	virtual void InitGameplayTags();
-
 	// Match State
 	virtual bool IsMatchInProgress() const override;
 	virtual void OnRep_MatchState();

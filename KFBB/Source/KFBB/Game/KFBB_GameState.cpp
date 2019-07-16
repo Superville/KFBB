@@ -22,7 +22,6 @@ AKFBB_GameState::AKFBB_GameState()
 	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 
-	InitGameplayTags();
 }
 
 void AKFBB_GameState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -55,12 +54,6 @@ void AKFBB_GameState::Tick(float DeltaTime)
 		MatchTimeRemaining = 0.f;
 	}
 	MatchTimeRemainingString = FormatTimeString(MatchTimeRemaining);
-}
-
-void AKFBB_GameState::InitGameplayTags()
-{
-	//test
-	//todo - store gameplay global tags here?
 }
 
 bool AKFBB_GameState::IsMatchInProgress() const

@@ -25,6 +25,10 @@ AKFBB_Ball::AKFBB_Ball()
 
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
+
+	bReplicates = true;
+	bReplicateMovement = true;
+	bAlwaysRelevant = true;
 }
 
 // Called when the game starts or when spawned
@@ -137,15 +141,15 @@ void AKFBB_Ball::RegisterWithPlayer(AKFBB_PlayerPawn* P)
 	OwningPlayer = P;
 	OwningPlayer->Ball = this;
 
-	OwningPlayer->AbilitySystemComponent->AddLooseGameplayTag(OwningPlayer->HasBallTag);
-	OwningPlayer->AbilitySystemComponent->SetTagMapCount(OwningPlayer->HasBallTag, 1);
+	OwningPlayer->AbilitySystemComponent->AddLooseGameplayTag(UTagLibrary::StatusPlayerHasBall);
+	OwningPlayer->AbilitySystemComponent->SetTagMapCount(UTagLibrary::StatusPlayerHasBall, 1);
 }
 
 void AKFBB_Ball::UnRegisterWithPlayer()
 {
 	if (OwningPlayer == nullptr || !OwningPlayer->AbilitySystemComponent) { return; }
 
-	OwningPlayer->AbilitySystemComponent->RemoveLooseGameplayTag(OwningPlayer->HasBallTag);
+	OwningPlayer->AbilitySystemComponent->RemoveLooseGameplayTag(UTagLibrary::StatusPlayerHasBall);
 	OwningPlayer->Ball = nullptr;
 	OwningPlayer = nullptr;
 }

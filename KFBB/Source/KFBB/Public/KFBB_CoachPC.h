@@ -35,9 +35,6 @@ class KFBB_API AKFBB_CoachPC : public APlayerController
 
 	void DrawDebugTouchedTile(UKFBB_FieldTile* t);
 
-	virtual void SetSelectedPlayer(AKFBB_PlayerPawn* p);
-	virtual void ClearSelectedPlayer();
-
 	UPROPERTY(Replicated)
 	FTileInfo SelectedTile;
 	virtual UKFBB_FieldTile* GetSelectedTile() const;
@@ -107,26 +104,33 @@ public:
 	UFUNCTION(Server, Reliable, WithValidation, BlueprintCallable, Category = "KFBB")
 	void SpawnBallOnTile(int x, int y);
 	void SpawnBallOnTile_Implementation(int x, int y);
-
-	AKFBB_PlayerPawn* GetSelectedPlayer() const;
-
+		
 	UFUNCTION(BlueprintCallable, Category = "KFBB | Input", meta=(DisplayName="ClearTileSelection"))
 	void BP_ClearTileSelection(bool bClearAI = true);
 	UFUNCTION(Server, Reliable, WithValidation, Category = "KFBB | Input")
 	void ServerClearTileSelection(bool bClearAI);
 	void ClearTileSelection(bool bClearAI = true);
 
-	UPROPERTY(BlueprintReadonly)
+	UPROPERTY()
 	AKFBB_Field* Field;
+	UFUNCTION(BlueprintPure, Category = "KFBB")
+	AKFBB_Field* GetField() const;
 
-
-	
-	UPROPERTY(BlueprintReadonly)
+	UPROPERTY()
 	AKFBB_AIController* SelectedAI;
-	UPROPERTY(BlueprintReadonly, Replicated)
+	UPROPERTY(Replicated)
 	AKFBB_PlayerPawn* SelectedPlayer;
-	UPROPERTY(BlueprintReadonly, Replicated)
+	UPROPERTY(Replicated)
 	AKFBB_PlayerPawn* PrevSelectedPlayer;
+	virtual void SetSelectedPlayer(AKFBB_PlayerPawn* P);
+	virtual void ClearSelectedPlayer();
+	UFUNCTION(BlueprintPure, Category = "KFBB")
+	AKFBB_PlayerPawn* GetSelectedPlayer() const;
+	UFUNCTION(BlueprintPure, Category = "KFBB")
+	AKFBB_PlayerPawn* GetPrevSelectedPlayer() const;
+	UFUNCTION(BlueprintPure, Category = "KFBB")
+	AKFBB_AIController* GetSelectedAI() const;
+
 	virtual void DrawSelectedPlayer();
 	
 	UPROPERTY(BlueprintReadOnly)

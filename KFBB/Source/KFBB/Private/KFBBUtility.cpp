@@ -71,5 +71,4 @@ FTileDir FTileDir::ConvertToTileDir(FVector2D v)
 	return FTileDir(v.X, v.Y);
 }
 
-
-//test FGameplayTag UTagLibrary::StatusPlayerHasBall = FGameplayTag::RequestGameplayTag();
+FGameplayTag UTagLibrary::StatusPlayerHasBall = FGameplayTag::RequestGameplayTag(FName("Status.Player.HasBall"));

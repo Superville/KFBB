@@ -294,7 +294,7 @@ void AKFBB_PlayerPawn::NotifyReachedGrid()
 	auto BallOnTile = GetCurrentTile()->GetBall();
 	if (BallOnTile && AbilitySystemComponent)
 	{
-		if (AbilitySystemComponent->GetTagCount(HasBallTag) == 0 &&
+		if (AbilitySystemComponent->GetTagCount(UTagLibrary::StatusPlayerHasBall) == 0 &&
 			BallOnTile->CanBePickedUp())
 		{
 			AbilitySystemComponent->TryActivateAbilitiesByTag(FGameplayTagContainer(TriggerPickupAbilityTag));

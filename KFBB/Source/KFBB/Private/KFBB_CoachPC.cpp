@@ -103,12 +103,6 @@ UKFBB_FieldTile* AKFBB_CoachPC::GetTileUnderMouse(float ReqDistFromCenterScale)
 	return nullptr;
 }
 
-AKFBB_PlayerPawn* AKFBB_CoachPC::GetSelectedPlayer() const
-{
-	auto Tile = GetSelectedTile();
-	return Tile ? Tile->GetPlayer() : nullptr;
-}
-
 void AKFBB_CoachPC::PlayerTouchScreen()
 {
 	UKFBB_FieldTile* MouseTile = GetTileUnderMouse();
@@ -274,14 +268,34 @@ void AKFBB_CoachPC::AddToPath(FTileInfo Tile)
 	}
 }
 
-void AKFBB_CoachPC::SetSelectedPlayer(AKFBB_PlayerPawn* p)
+AKFBB_Field* AKFBB_CoachPC::GetField() const
 {
-	if (!p) { return; }
+	return Field;
+}
 
-	if(p->CanBeSelected(this))
+AKFBB_PlayerPawn* AKFBB_CoachPC::GetSelectedPlayer() const
+{
+	return SelectedPlayer;
+}
+
+AKFBB_PlayerPawn* AKFBB_CoachPC::GetPrevSelectedPlayer() const
+{
+	return PrevSelectedPlayer;
+}
+
+AKFBB_AIController* AKFBB_CoachPC::GetSelectedAI() const
+{
+	return SelectedAI;
+}
+
+void AKFBB_CoachPC::SetSelectedPlayer(AKFBB_PlayerPawn* P)
+{
+	if (!P) { return; }
+
+	if(P->CanBeSelected(this))
 	{
 		PrevSelectedPlayer = SelectedPlayer;
-		SelectedPlayer = p;
+		SelectedPlayer = P;
 		SelectedAI = SelectedPlayer ? Cast<AKFBB_AIController>(SelectedPlayer->GetController()) : nullptr;
 	
 		// Start fresh making tile selection when switching selected players
