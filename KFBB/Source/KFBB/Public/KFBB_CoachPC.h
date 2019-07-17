@@ -150,6 +150,7 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "KFBB")
 	void SetTeamID(uint8 teamID);
 	uint8 TeamID = 255;
+	virtual void UpdateAllPawnTeamColors();
 
 
 	//debug

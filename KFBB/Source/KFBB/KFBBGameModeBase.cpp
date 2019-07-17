@@ -39,30 +39,36 @@ void AKFBBGameModeBase::BeginPlay()
 		}
 	}
 
-	AKFBB_Field::AssignFieldActor(this, Field);
-	SpawnTeams();
-	if (GetNetMode() != NM_DedicatedServer)
-	{
-		SpawnTeamPlayers();
-	}
+	Init();
 }
 
 void AKFBBGameModeBase::PreInitializeComponents()
 {
 	Super::PreInitializeComponents();
 
-	AKFBB_Field::AssignFieldActor(this, Field);
-
-	SpawnTeams();
-	if (GetNetMode() != NM_DedicatedServer)
-	{
-		SpawnTeamPlayers();
-	}
+	Init();
 }
 
 void AKFBBGameModeBase::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+}
+
+void AKFBBGameModeBase::Init()
+{
+	if (bInitialized) { return; }
+	bInitialized = true;
+
+	AKFBB_Field::AssignFieldActor(this, Field);
+	if (Field)
+	{
+		Field->Init();
+	}
+	SpawnTeams();
+	if (GetNetMode() != NM_DedicatedServer)
+	{
+		SpawnTeamPlayers();
+	}
 }
 
 bool AKFBBGameModeBase::IsMatchInProgress() const
@@ -100,7 +106,6 @@ bool AKFBBGameModeBase::ReadyToEndMatch_Implementation()
 
 void AKFBBGameModeBase::OnMatchStateSet()
 {
-	//test
 	UE_LOG(LogTemp, Warning, TEXT("MATCH STATE %s"), *MatchState.ToString());
 
 	FGameModeEvents::OnGameModeMatchStateSetEvent().Broadcast(MatchState);
@@ -133,9 +138,6 @@ void AKFBBGameModeBase::OnMatchStateSet()
 
 void AKFBBGameModeBase::HandleMatchIsWaitingToStart()
 {
-	SpawnTeamPlayers();
-//test	SpawnBall(nullptr);
-
 	if (GameSession != nullptr)
 	{
 		GameSession->HandleMatchIsWaitingToStart();
@@ -263,13 +265,11 @@ void AKFBBGameModeBase::HandleStartingNewPlayer_Implementation(APlayerController
 
 AActor* AKFBBGameModeBase::ChoosePlayerStart_Implementation(AController* Player)
 {
-	//test
 	return Super::ChoosePlayerStart_Implementation(Player);
 }
 
 APawn* AKFBBGameModeBase::SpawnDefaultPawnFor_Implementation(AController* NewPlayer, AActor* StartSpot)
 {
-	//test
 	return Super::SpawnDefaultPawnFor_Implementation(NewPlayer, StartSpot);
 }
 
@@ -343,23 +343,19 @@ UClass* AKFBBGameModeBase::GetDefaultPlayerClass()
 
 int AKFBBGameModeBase::GetFieldWidth() const
 {
-	if (Field == nullptr)
-		return -1;
+	if (!Field) { return -1; } 
 	return Field->Width;
 }
 
 int AKFBBGameModeBase::GetFieldLength() const
 {
-	if (Field == nullptr)
-		return -1;
+	if (!Field) { return -1; } 	
 	return Field->Length;
 }
 
 FVector AKFBBGameModeBase::GetFieldTileLocation(int x, int y) const
 {
-	if (Field == nullptr)
-		return FVector::ZeroVector;
-
+	if (!Field) { return FVector::ZeroVector; }
 	return Field->GetFieldTileLocation(x, y);
 }
 

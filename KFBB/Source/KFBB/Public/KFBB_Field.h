@@ -34,12 +34,8 @@ protected:
 
 public:
 	virtual void Init();
-
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
-
-	
-
 	// Searches the map for a KFBB_Field actor and assigns it to the pointer ref
 	static bool AssignFieldActor(AActor* src, AKFBB_Field*& ptrField);
 

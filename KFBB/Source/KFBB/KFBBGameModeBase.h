@@ -51,6 +51,9 @@ public:
 	virtual void PreInitializeComponents() override;
 	virtual void Tick(float DeltaTime) override;
 
+	bool bInitialized = false;
+	virtual void Init();
+
 	// Match States
 	virtual bool IsMatchInProgress() const override;
 	virtual bool ReadyToStartMatch_Implementation() override;

@@ -26,6 +26,7 @@ void AKFBB_CoachPC::BeginPlay()
 	AKFBB_Field::AssignFieldActor(this, Field);
 
 	SetTeamID(0);
+	UpdateAllPawnTeamColors();
 }
 
 void AKFBB_CoachPC::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -567,6 +568,16 @@ void AKFBB_CoachPC::SetTeamID(uint8 teamID)
 	{
 		KBGM->RegisterCoach(this, teamID);
 		Field->TeamColorTileMaterials(teamID);
+	}
+}
+
+void AKFBB_CoachPC::UpdateAllPawnTeamColors()
+{
+	if (!IsLocalPlayerController()) { return; }
+	for (TActorIterator<AKFBB_PlayerPawn> itr(GetWorld()); itr; ++itr)
+	{
+		auto P = *itr;
+		P->OnRep_TeamID();
 	}
 }
 
