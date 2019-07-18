@@ -86,4 +86,7 @@ public:
 	void DrawDebugTile(FVector offset) const;
 	void DrawDebugTileOverride(FVector offset, float scale, FColor c, float thickness = 0.f) const;
 	FColor GetDebugColor() const;
+
+	bool IsNameStableForNetworking() const override { return true; }
+	bool IsSupportedForNetworking() const override  { return true; }
 };
