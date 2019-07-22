@@ -26,7 +26,13 @@ class KFBB_API UTagLibrary : public UObject
 	GENERATED_BODY()
 
 public:
-	static FGameplayTag StatusPlayerHasBall;
+	static const FGameplayTag StatusPlayerHasBall;
+	static const FGameplayTag StatusBallCanPickup;
+
+	static const FGameplayTag BallStateFree;
+	static const FGameplayTag BallStateFumble;
+	static const FGameplayTag BallStatePass;
+	static const FGameplayTag BallStatePossessed;
 
 //	FGameplayTag ProhibitCommandsTag;
 //	FGameplayTag TriggerPickupAbilityTag;

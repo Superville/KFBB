@@ -6,6 +6,7 @@
 #include "Engine/DataTable.h"
 #include "AbilitySystemInterface.h"
 #include "GameplayTags.h"
+#include "GameplayEffectTypes.h"
 #include "GameFramework/Character.h"
 #include "KFBBUtility.h"
 #include "KFBB_PlayerPawn.generated.h"
@@ -22,6 +23,7 @@ class AKFBB_Ball;
 class UKFBBAttributeSet;
 class UAbilitySystemComponent;
 class UGameplayAbility;
+class UGameplayEffect;
 
 UENUM(BlueprintType)
 namespace EKFBB_PlayerState
@@ -118,9 +120,10 @@ class KFBB_API AKFBB_PlayerPawn : public ACharacter, public IAbilitySystemInterf
 	UFUNCTION(BlueprintCallable, Category = "KFBB | AI", meta = (AllowPrivateAccess = "true"))
 	virtual void ClearPathToDestTile();
 
-	void DrawDebugCurrentTile() const;
-	void DrawDebugStatus() const;
-	void DrawDebugPath() const;
+	virtual void DrawDebug() const;
+	virtual void DrawDebugCurrentTile() const;
+	virtual void DrawDebugStatus() const;
+	virtual void DrawDebugPath() const;
 	FColor GetDebugColor() const;
 	FString GetStatusString() const;
 
@@ -230,6 +233,12 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void FumbleBall(AKFBB_Ball* BallToFumble);
 
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "KFBB | Gameplay Effects")
+	TSubclassOf<UGameplayEffect> GE_StatusHasBall = nullptr;
+	FActiveGameplayEffectHandle Handle_StatusHasBall; // Handle is only valid on Server
+	virtual void NotifyGainPossession(AKFBB_Ball* ball);
+	virtual void NotifyLostPossession(AKFBB_Ball* ball);
+
 	UPROPERTY(BlueprintReadOnly)
 	TEnumAsByte<EKFBB_PlayerState::Type> Status;
 
@@ -247,8 +256,11 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Abilities", meta = (AllowPrivateAccess = "true"))
 	UAbilitySystemComponent* AbilitySystemComponent = nullptr;
 	UAbilitySystemComponent* GetAbilitySystemComponent() const override;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "KFBB | Abilities")
+	TArray<TSubclassOf<UKFBB_GameplayAbility>> AbilityList;
 	UFUNCTION(BlueprintCallable, Category = "KFBB")
-	void GrantAbility(TSubclassOf<UGameplayAbility> Ability);
+	void GrantAbility(TSubclassOf<UKFBB_GameplayAbility> Ability);
+	virtual void InitAbilities();
 
 	UFUNCTION(BlueprintCallable, Category = "KFBB | Stats")
 	virtual int32 GetStat_Movement();

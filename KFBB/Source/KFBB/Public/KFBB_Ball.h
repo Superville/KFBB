@@ -9,6 +9,7 @@
 #include "AbilitySystemInterface.h"
 #include "KFBB_Ball.generated.h"
 
+class UGameplayEffect;
 class AKFBB_Field;
 
 UCLASS()
@@ -20,7 +21,6 @@ class KFBB_API AKFBB_Ball : public AActor, public IAbilitySystemInterface
 	void RegisterWithTile(class UKFBB_FieldTile* Tile);
 
 	bool bOnGround;
-	float LastFumbleTime;
 
 
 public:	
@@ -49,7 +49,7 @@ public:
 	FORCEINLINE UKFBB_FieldTile* GetCurrentTile() const;
 
 
-	UPROPERTY(BlueprintReadOnly)
+	UPROPERTY(Replicated, BlueprintReadOnly, Category="KFBB")
 	class AKFBB_PlayerPawn* OwningPlayer;
 
 	void RegisterWithPlayer(class AKFBB_PlayerPawn* P);
@@ -57,24 +57,43 @@ public:
 
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
 	bool IsPossessed() const;
 
 	bool CanBePickedUp() const;
 	void UpdateCanBePickedUp();
-	bool IsMoving() const;
+	bool IsFumbled() const;
+	bool IsFree() const;
+	UFUNCTION(BlueprintCallable, Category = "KFBB | Ball")
 	void StopMovement();
 	void AdjustBallToTileCenter(float DeltaTime);
 	void FumbleBall(UKFBB_FieldTile* DestTile);
 	float TimeSinceLastFumble() const;
 	
-
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Abilities", meta = (AllowPrivateAccess = "true"))
+#pragma region GameplayAbilities
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "KFBB | Abilities")
 	UAbilitySystemComponent* AbilitySystemComponent = nullptr;
 	UAbilitySystemComponent* GetAbilitySystemComponent() const override;
-	
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Tags")
-	FGameplayTag CanBePickedUpTag;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "KFBB | Abilities")
+	TArray<TSubclassOf<UKFBB_GameplayAbility>> AbilityList;
+	UFUNCTION(BlueprintCallable, Category = "KFBB")
+	void GrantAbility(TSubclassOf<UKFBB_GameplayAbility> Ability);
+	virtual void InitAbilities();
+#pragma endregion
 
-	void DrawDebugCurrentTile() const;
+#pragma region GameplayEffects
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "KFBB | Gameplay Effects")
+	TSubclassOf<UGameplayEffect> GE_BallState_Possessed = nullptr;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "KFBB | Gameplay Effects")
+	TSubclassOf<UGameplayEffect> GE_BallState_Free = nullptr;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "KFBB | Gameplay Effects")
+	TSubclassOf<UGameplayEffect> GE_BallState_Fumble = nullptr;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "KFBB | Gameplay Effects")
+	TSubclassOf<UGameplayEffect> GE_BallState_Pass = nullptr;
+#pragma endregion
+
+
+	virtual void DrawDebug() const;
+	virtual void DrawDebugCurrentTile() const;
 };

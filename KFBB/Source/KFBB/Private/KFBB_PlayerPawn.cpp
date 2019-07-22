@@ -10,6 +10,7 @@
 #include "AbilitySystemComponent.h"
 
 // KFBB Includes
+#include "KFBB_GameplayAbility.h"
 #include "KFBB_AIController.h"
 #include "KFBB_CoachPC.h"
 #include "KFBB_Field.h"
@@ -44,16 +45,29 @@ UAbilitySystemComponent* AKFBB_PlayerPawn::GetAbilitySystemComponent() const
 	return AbilitySystemComponent;
 }
 
-void AKFBB_PlayerPawn::GrantAbility(TSubclassOf<UGameplayAbility> Ability)
+void AKFBB_PlayerPawn::GrantAbility(TSubclassOf<UKFBB_GameplayAbility> Ability)
 {
-	if (AbilitySystemComponent && Ability&& HasAuthority())
+	if (AbilitySystemComponent && Ability && HasAuthority())
 	{
 		FGameplayAbilitySpecDef SpecDef = FGameplayAbilitySpecDef();
 		SpecDef.Ability = Ability;
 		FGameplayAbilitySpec AbilitySpec = FGameplayAbilitySpec(SpecDef, 1);
 		AbilitySystemComponent->GiveAbility(AbilitySpec);
 		AbilitySystemComponent->InitAbilityActorInfo(this, this);
+
+		if (Ability.GetDefaultObject()->bAutoActivate)
+		{
+			AbilitySystemComponent->TryActivateAbilityByClass(Ability);
+		}
 	}	
+}
+
+void AKFBB_PlayerPawn::InitAbilities()
+{
+	for (auto AbilityToGrant : AbilityList)
+	{
+		GrantAbility(AbilityToGrant);
+	}
 }
 
 int32 AKFBB_PlayerPawn::GetStat_Movement()
@@ -68,6 +82,9 @@ void AKFBB_PlayerPawn::BeginPlay()
 	
 	AKFBB_Field::AssignFieldActor(this, Field);
 	RegisterWithField();
+
+	InitAbilities();
+
 	ClearCooldownTimer();
 }
 
@@ -92,9 +109,7 @@ void AKFBB_PlayerPawn::Tick(float DeltaTime)
 	}
 	
 	//debug
-//	DrawDebugCurrentTile();
-//	DrawDebugStatus();
-	DrawDebugPath();
+	DrawDebug();
 }
 
 // Called to bind functionality to input
@@ -389,7 +404,8 @@ void AKFBB_PlayerPawn::SetStatus(EKFBB_PlayerState::Type newStatus)
 
 bool AKFBB_PlayerPawn::HasBall() const
 {
-	return (Ball != nullptr);
+	return (AbilitySystemComponent && AbilitySystemComponent->HasMatchingGameplayTag(UTagLibrary::StatusPlayerHasBall));
+//	return (Ball != nullptr);
 }
 
 bool AKFBB_PlayerPawn::CanPickupBall(AKFBB_Ball* ball) const
@@ -409,6 +425,10 @@ bool AKFBB_PlayerPawn::CanPickupBall(AKFBB_Ball* ball) const
 
 bool AKFBB_PlayerPawn::TryPickupBall() const
 {
+	//test
+//	return true;
+//	return false;
+
 	auto roll = FMath::RandRange(1, 6);
 	int chance = 4;
 
@@ -453,6 +473,24 @@ void AKFBB_PlayerPawn::FumbleBall(AKFBB_Ball* BallToFumble)
 	BallToFumble->FumbleBall(destTile);
 }
 
+void AKFBB_PlayerPawn::NotifyGainPossession(AKFBB_Ball* ball)
+{
+	Ball = ball;
+	if (AbilitySystemComponent)
+	{
+		Handle_StatusHasBall = AbilitySystemComponent->ApplyGameplayEffectToSelf(GE_StatusHasBall.GetDefaultObject(), 1, FGameplayEffectContextHandle());
+	}
+}
+
+void AKFBB_PlayerPawn::NotifyLostPossession(AKFBB_Ball* ball)
+{
+	if (AbilitySystemComponent)
+	{
+		AbilitySystemComponent->RemoveActiveGameplayEffect(Handle_StatusHasBall);
+	}
+	Ball = nullptr;	
+}
+
 UKFBB_FieldTile* AKFBB_PlayerPawn::GetDestinationTile() const
 {
 	return Field ? Field->GetTileByInfo(DestinationTile) : nullptr;
@@ -483,6 +521,13 @@ void AKFBB_PlayerPawn::ClearPathToDestTile()
 	PathToDestTile.Empty();
 }
 
+void AKFBB_PlayerPawn::DrawDebug() const
+{
+//	DrawDebugCurrentTile();
+	DrawDebugStatus();
+	DrawDebugPath();
+}
+
 void AKFBB_PlayerPawn::DrawDebugCurrentTile() const
 {
 	if (Field == nullptr || !CurrentTile.IsValid()) { return; }
@@ -492,14 +537,21 @@ void AKFBB_PlayerPawn::DrawDebugCurrentTile() const
 
 void AKFBB_PlayerPawn::DrawDebugStatus() const
 {
-	bool bDraw = (Status != EKFBB_PlayerState::Ready);
+	if (HasBall())
+	{
+		DrawDebugBox(GetWorld(), GetActorLocation(), FVector(20, 20, 40), FColor::Green);
+	}
+
+
+
+	/*bool bDraw = (Status != EKFBB_PlayerState::Ready);
 
 	if (bDraw)
 	{
 		auto MyWorld = GetWorld();
 		FColor color = GetDebugColor();
 		DrawDebugBox(MyWorld, GetActorLocation(), FVector(20, 20, 20), color, false);
-	}
+	}*/
 }
 FColor AKFBB_PlayerPawn::GetDebugColor() const
 {

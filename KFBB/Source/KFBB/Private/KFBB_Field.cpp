@@ -24,8 +24,6 @@ AKFBB_Field::AKFBB_Field(const FObjectInitializer& ObjectInitializer) : Super(Ob
 {
 	Root = ObjectInitializer.CreateAbstractDefaultSubobject<USceneComponent>(this, TEXT("Root"));
 	RootComponent = Root;
-
-//	Tiles = TArray<UKFBB_FieldTile*>();
 }
 
 bool AKFBB_Field::AssignFieldActor(AActor* src, AKFBB_Field*& ptrField)

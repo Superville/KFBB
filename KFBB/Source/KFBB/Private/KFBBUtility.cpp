@@ -71,4 +71,10 @@ FTileDir FTileDir::ConvertToTileDir(FVector2D v)
 	return FTileDir(v.X, v.Y);
 }
 
-FGameplayTag UTagLibrary::StatusPlayerHasBall = FGameplayTag::RequestGameplayTag(FName("Status.Player.HasBall"));
+const FGameplayTag UTagLibrary::StatusPlayerHasBall = FGameplayTag::RequestGameplayTag(FName("Status.Player.HasBall"));
+
+const FGameplayTag UTagLibrary::StatusBallCanPickup = FGameplayTag::RequestGameplayTag(FName("Status.Ball.CanBePickedUp"));
+const FGameplayTag UTagLibrary::BallStateFree = FGameplayTag::RequestGameplayTag(FName("Ball.State.Free"));
+const FGameplayTag UTagLibrary::BallStateFumble = FGameplayTag::RequestGameplayTag(FName("Ball.State.Fumble"));
+const FGameplayTag UTagLibrary::BallStatePass = FGameplayTag::RequestGameplayTag(FName("Ball.State.Pass"));
+const FGameplayTag UTagLibrary::BallStatePossessed = FGameplayTag::RequestGameplayTag(FName("Ball.State.Possessed"));

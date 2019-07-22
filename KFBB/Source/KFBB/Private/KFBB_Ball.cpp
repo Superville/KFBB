@@ -3,11 +3,13 @@
 #include "KFBB_Ball.h"
 
 // Engine Includes
+#include "Net/UnrealNetwork.h"
 #include "AbilitySystemComponent.h"
 #include "UnrealMathUtility.h"
 #include "DrawDebugHelpers.h"
 
 // KFBB Includes
+#include "KFBB_GameplayAbility.h"
 #include "KFBB_PlayerPawn.h"
 #include "KFBB_Field.h"
 #include "KFBB_FieldTile.h"
@@ -44,6 +46,37 @@ void AKFBB_Ball::BeginPlay()
 	{
 		KFGS->RegisterBall(this);
 	}
+
+	InitAbilities();
+	if (AbilitySystemComponent)
+	{
+		AbilitySystemComponent->ApplyGameplayEffectToSelf(GE_BallState_Free.GetDefaultObject(), 1, FGameplayEffectContextHandle());
+	}
+}
+
+void AKFBB_Ball::GrantAbility(TSubclassOf<UKFBB_GameplayAbility> Ability)
+{
+	if (AbilitySystemComponent && Ability && HasAuthority())
+	{
+		FGameplayAbilitySpecDef SpecDef = FGameplayAbilitySpecDef();
+		SpecDef.Ability = Ability;
+		FGameplayAbilitySpec AbilitySpec = FGameplayAbilitySpec(SpecDef, 1);
+		AbilitySystemComponent->GiveAbility(AbilitySpec);
+		AbilitySystemComponent->InitAbilityActorInfo(this, this);
+
+		if (Ability.GetDefaultObject()->bAutoActivate)
+		{
+			AbilitySystemComponent->TryActivateAbilityByClass(Ability);
+		}
+	}
+}
+
+void AKFBB_Ball::InitAbilities()
+{
+	for (auto AbilityToGrant : AbilityList)
+	{
+		GrantAbility(AbilityToGrant);
+	}
 }
 
 void AKFBB_Ball::EndPlay(const EEndPlayReason::Type EndPlayReason)
@@ -68,18 +101,20 @@ void AKFBB_Ball::Tick(float DeltaTime)
 	Super::Tick(DeltaTime);
 
 	RegisterWithField();
-	if (IsMoving() && TimeSinceLastFumble() > 1.f)
-	{
-		StopMovement();
-	}
-	if(!IsMoving() )
+	if (IsFree())
 	{
 		AdjustBallToTileCenter(DeltaTime);
 	}
-	UpdateCanBePickedUp();
 	
 	//debug
-	DrawDebugCurrentTile();
+	DrawDebug();
+}
+
+void AKFBB_Ball::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	DOREPLIFETIME(AKFBB_Ball, OwningPlayer);
 }
 
 void AKFBB_Ball::RegisterWithField()
@@ -135,22 +170,23 @@ FORCEINLINE UKFBB_FieldTile* AKFBB_Ball::GetCurrentTile() const
 
 void AKFBB_Ball::RegisterWithPlayer(AKFBB_PlayerPawn* P)
 {
-	if (!P || !P->AbilitySystemComponent) { return; }
+	if (!P || !P->AbilitySystemComponent || !AbilitySystemComponent) { return; }
 	if (OwningPlayer) { return; }
 
 	OwningPlayer = P;
-	OwningPlayer->Ball = this;
-
-	OwningPlayer->AbilitySystemComponent->AddLooseGameplayTag(UTagLibrary::StatusPlayerHasBall);
-	OwningPlayer->AbilitySystemComponent->SetTagMapCount(UTagLibrary::StatusPlayerHasBall, 1);
+	OwningPlayer->NotifyGainPossession(this);
+	
+	if (AbilitySystemComponent)
+	{
+		AbilitySystemComponent->ApplyGameplayEffectToSelf(GE_BallState_Possessed.GetDefaultObject(), 1, FGameplayEffectContextHandle());
+	}
 }
 
 void AKFBB_Ball::UnRegisterWithPlayer()
 {
 	if (OwningPlayer == nullptr || !OwningPlayer->AbilitySystemComponent) { return; }
 
-	OwningPlayer->AbilitySystemComponent->RemoveLooseGameplayTag(UTagLibrary::StatusPlayerHasBall);
-	OwningPlayer->Ball = nullptr;
+	OwningPlayer->NotifyLostPossession(this);
 	OwningPlayer = nullptr;
 }
 
@@ -173,62 +209,45 @@ void AKFBB_Ball::FumbleBall(UKFBB_FieldTile* DestTile)
 		BallSMC->SetPhysicsAngularVelocityInDegrees(ballAngVel);
 	}
 
-	LastFumbleTime = GetWorld()->TimeSeconds;
-}
-
-float AKFBB_Ball::TimeSinceLastFumble() const
-{
-	return (GetWorld()->TimeSeconds - LastFumbleTime);
+	if (AbilitySystemComponent)
+	{
+		AbilitySystemComponent->ApplyGameplayEffectToSelf(GE_BallState_Fumble.GetDefaultObject(), 1, FGameplayEffectContextHandle());
+	}
 }
 
 bool AKFBB_Ball::CanBePickedUp() const
 {
-	return (AbilitySystemComponent && AbilitySystemComponent->GetTagCount(CanBePickedUpTag) > 0);
-}
-
-void AKFBB_Ball::UpdateCanBePickedUp()
-{
-	if (AbilitySystemComponent)
-	{
-		if (IsPossessed() || IsMoving() || TimeSinceLastFumble() <= 1.f)
-		{
-			AbilitySystemComponent->RemoveLooseGameplayTag(CanBePickedUpTag);
-		}
-		else
-		{
-			AbilitySystemComponent->AddLooseGameplayTag(CanBePickedUpTag);
-			AbilitySystemComponent->SetTagMapCount(CanBePickedUpTag, 1);
-		}
-	}
+	return (AbilitySystemComponent && AbilitySystemComponent->HasMatchingGameplayTag(UTagLibrary::StatusBallCanPickup));
 }
 
 bool AKFBB_Ball::IsPossessed() const
 {
-	return (OwningPlayer != nullptr);
+	return (AbilitySystemComponent && AbilitySystemComponent->HasMatchingGameplayTag(UTagLibrary::BallStatePossessed));
+//	return (OwningPlayer != nullptr);
 }
 
-bool AKFBB_Ball::IsMoving() const
+bool AKFBB_Ball::IsFumbled() const
 {
-	if (bOnGround)
-	{
-		auto v = GetVelocity();
-		constexpr float ZVelocityThreshold = 5.f;
-		if (FMath::Abs(v.Z) < 5.f)
-		{
-			return false;
-		}
-	}
+	return (AbilitySystemComponent && AbilitySystemComponent->HasMatchingGameplayTag(UTagLibrary::BallStateFumble));
+}
 
-	return true;
+bool AKFBB_Ball::IsFree() const
+{
+	return (AbilitySystemComponent && AbilitySystemComponent->HasMatchingGameplayTag(UTagLibrary::BallStateFree));
 }
 
 void AKFBB_Ball::StopMovement()
 {
-	auto smc = Cast<UStaticMeshComponent>(GetRootComponent());
-	if (smc != nullptr)
+	auto SMC = Cast<UStaticMeshComponent>(GetRootComponent());
+	if (SMC != nullptr)
 	{
-		smc->SetPhysicsLinearVelocity(FVector::ZeroVector);
-		smc->SetPhysicsAngularVelocityInDegrees(FVector::ZeroVector);
+		SMC->SetPhysicsLinearVelocity(FVector::ZeroVector);
+		SMC->SetPhysicsAngularVelocityInDegrees(FVector::ZeroVector);
+	}
+
+	if (AbilitySystemComponent)
+	{
+		AbilitySystemComponent->ApplyGameplayEffectToSelf(GE_BallState_Free.GetDefaultObject(), 1, FGameplayEffectContextHandle());
 	}
 }
 
@@ -250,6 +269,24 @@ void AKFBB_Ball::AdjustBallToTileCenter(float DeltaTime)
 UAbilitySystemComponent* AKFBB_Ball::GetAbilitySystemComponent() const
 {
 	return AbilitySystemComponent;
+}
+
+void AKFBB_Ball::DrawDebug() const
+{
+	DrawDebugCurrentTile();
+
+	if (CanBePickedUp())
+	{
+		DrawDebugBox(GetWorld(), GetActorLocation(), FVector(10.f), FColor::White);
+	}
+	if (IsFumbled())
+	{
+		DrawDebugBox(GetWorld(), GetActorLocation(), FVector(8.f), FColor::Black);
+	}
+	if (IsPossessed())
+	{
+		DrawDebugBox(GetWorld(), GetActorLocation(), FVector(12.f), FColor::Green);
+	}
 }
 
 void AKFBB_Ball::DrawDebugCurrentTile() const
