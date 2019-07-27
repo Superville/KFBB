@@ -47,11 +47,12 @@ void AKFBB_CoachPC::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
+	UpdatePotentialMoveList();
+
 	if (IsLocalPlayerController())
 	{
 		UpdateDisplayTileUnderMouse();
 		CheckDragPath();
-		UpdatePotentialMoveList();
 
 		DrawPotentialMoveList();
 		DrawSelectedPlayer();
