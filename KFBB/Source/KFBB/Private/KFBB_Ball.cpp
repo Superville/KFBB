@@ -241,6 +241,7 @@ void AKFBB_Ball::StopMovement()
 	auto SMC = Cast<UStaticMeshComponent>(GetRootComponent());
 	if (SMC != nullptr)
 	{
+		BallSMC->SetSimulatePhysics(false);
 		SMC->SetPhysicsLinearVelocity(FVector::ZeroVector);
 		SMC->SetPhysicsAngularVelocityInDegrees(FVector::ZeroVector);
 	}
